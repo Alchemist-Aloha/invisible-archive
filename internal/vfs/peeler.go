@@ -28,8 +28,8 @@ func PeelPath(basePath, requestPath string) (*PathResult, error) {
 		info, err := os.Stat(current)
 		if err == nil {
 			// Found a physical match
-			ext := strings.ToLower(filepath.Ext(current))
-			isZip := !info.IsDir() && ext == ".zip"
+			nameLower := strings.ToLower(current)
+			isZip := !info.IsDir() && strings.HasSuffix(nameLower, ".zip")
 			
 			virtualPath := filepath.Join(virtualSegments...)
 			if virtualPath != "" {

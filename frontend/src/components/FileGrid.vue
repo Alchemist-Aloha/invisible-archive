@@ -129,7 +129,7 @@ const handleThumbError = (path: string) => {
             </div>
 
             <!-- Directory Overlay -->
-            <div v-if="item.is_dir" class="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors duration-300"></div>
+            <div v-if="item.is_dir || (item.capabilities & CAP_BROWSE)" class="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors duration-300"></div>
           </div>
           
           <div class="mt-3 w-full px-1">

@@ -17,6 +17,7 @@ func TestPeelPath(t *testing.T) {
 	// Setup structure:
 	// tmpDir/folder/
 	// tmpDir/folder/archive.zip
+	// tmpDir/folder/v1.0.release.zip
 	// tmpDir/direct.zip
 	
 	folderPath := filepath.Join(tmpDir, "folder")
@@ -24,6 +25,9 @@ func TestPeelPath(t *testing.T) {
 	
 	archivePath := filepath.Join(folderPath, "archive.zip")
 	os.WriteFile(archivePath, []byte("fake zip content"), 0644)
+
+	dottedArchivePath := filepath.Join(folderPath, "v1.0.release.zip")
+	os.WriteFile(dottedArchivePath, []byte("fake zip content"), 0644)
 	
 	directZipPath := filepath.Join(tmpDir, "direct.zip")
 	os.WriteFile(directZipPath, []byte("fake zip content"), 0644)
@@ -47,6 +51,20 @@ func TestPeelPath(t *testing.T) {
 			requestPath:  "folder/archive.zip",
 			wantPhysical: archivePath,
 			wantVirtual:  "",
+			wantIsArchive: true,
+		},
+		{
+			name:         "Archive with multiple dots",
+			requestPath:  "folder/v1.0.release.zip",
+			wantPhysical: dottedArchivePath,
+			wantVirtual:  "",
+			wantIsArchive: true,
+		},
+		{
+			name:         "Path inside archive with multiple dots",
+			requestPath:  "folder/v1.0.release.zip/data/config.json",
+			wantPhysical: dottedArchivePath,
+			wantVirtual:  filepath.Join("data", "config.json"),
 			wantIsArchive: true,
 		},
 		{
