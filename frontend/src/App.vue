@@ -192,6 +192,10 @@ onMounted(() => {
   }
 });
 
+// Seek variables for video
+let touchStartX = 0;
+let initialSeekTime = 0;
+
 // Preload Engine: Fetch upcoming images in the background
 watch(previewItem, (item) => {
   if (!item || !displayItems.value) return;
@@ -218,7 +222,32 @@ watch(previewItem, (item) => {
 
 // Swipe navigation
 useSwipe(previewStage, {
+  onSwipeStart(e: TouchEvent) {
+    if (player && player.fullscreen.active && e.touches.length > 0) {
+      touchStartX = e.touches[0].clientX;
+      initialSeekTime = player.currentTime;
+    }
+  },
+  onSwipe(e: TouchEvent) {
+    if (player && player.fullscreen.active && e.touches.length > 0) {
+      const currentX = e.touches[0].clientX;
+      const deltaX = currentX - touchStartX;
+
+      // Calculate scrub amount. Scrub up to the full duration across the screen width.
+      // E.g., moving across the screen shifts the time by 10% of duration, maxing out at 5 minutes?
+      // Actually, a standard ratio of 90 seconds across full screen is good for mobile. Let's use 90s.
+      // For very short videos, this shouldn't exceed the duration.
+      const scrubAmount = Math.min(player.duration, 90);
+      const seekDelta = (deltaX / window.innerWidth) * scrubAmount;
+
+      let newTime = initialSeekTime + seekDelta;
+      player.currentTime = Math.max(0, Math.min(newTime, player.duration));
+    }
+  },
   onSwipeEnd(_e, direction) {
+    if (player && player.fullscreen.active) {
+      return; // Skip file navigation when swiping in full screen video
+    }
     if (direction === 'left') navigatePreview('next');
     if (direction === 'right') navigatePreview('prev');
   },
