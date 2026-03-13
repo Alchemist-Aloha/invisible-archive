@@ -57,7 +57,7 @@
 3.  **SQLite FTS5:** Ultra-fast search across indexed paths.
 
 ### Phase 3: The "Finder" UI
-**Goal:** Responsive, "seamless" archive browsing.
+**Goal:** Responsive, "seamless" archive browsing. Read UI.md for detail guideline of the UI.
 1.  **Navigation System:**
     *   URL-driven navigation: `app.com/#/browse/archive.zip/internal/path`.
     *   Breadcrumbs with dark mode support.
