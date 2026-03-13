@@ -13,12 +13,14 @@ import {
   Info, 
   FileText 
 } from 'lucide-vue-next';
-import { fetchList, searchFiles, getRawUrl, fetchText, CAP_STREAM, CAP_RENDER, CAP_EDIT, CAP_BROWSE } from './api';
+import { fetchList, searchFiles, getRawUrl, getThumbUrl, fetchText, CAP_STREAM, CAP_RENDER, CAP_EDIT, CAP_BROWSE } from './api';
 import type { FileItem } from './api';
 import Breadcrumbs from './components/Breadcrumbs.vue';
 import FileGrid from './components/FileGrid.vue';
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
+import PhotoSwipeLightbox from 'photoswipe/lightbox';
+import 'photoswipe/style.css';
 
 // Path state with URL and localStorage sync
 const getInitialPath = () => {
@@ -39,6 +41,7 @@ const videoElement = ref<HTMLVideoElement | null>(null);
 const previewStage = ref<HTMLElement | null>(null);
 const transitionName = ref('slide-next');
 let player: Plyr | null = null;
+const lightbox = ref<PhotoSwipeLightbox | null>(null);
 
 // Persistence and Navigation
 const handleNavigate = (path: string, pushState = true) => {
@@ -54,9 +57,73 @@ const handleNavigate = (path: string, pushState = true) => {
 
 // Handle browser back/forward and mobile swipe gestures
 onMounted(() => {
+  // Initialize PhotoSwipe for robust pinch-zoom and dynamic scroll
+  lightbox.value = new PhotoSwipeLightbox({
+    gallery: '#file-grid',
+    children: '[data-pswp-src]',
+    pswpModule: () => import('photoswipe'),
+    bgOpacity: 0.98,
+    padding: { top: 20, bottom: 20, left: 20, right: 20 },
+    // Robust zoom settings
+    initialZoomLevel: 'fit',
+    secondaryZoomLevel: 1.5,
+    maxZoomLevel: 8,
+    wheelToZoom: true,
+    // Prevent accidental closes during complex gestures
+    pinchToClose: false,
+    closeOnVerticalDrag: false,
+  });
+
+  // Dynamically fix aspect ratio when image loads
+  lightbox.value.on('gettingData', (event) => {
+    const { data } = event;
+    if (data.src && (!data.width || data.width === 1)) {
+      // Set temporary large dimensions to allow zooming immediately
+      data.width = 3000;
+      data.height = 2000;
+
+      const img = new Image();
+      img.src = data.src;
+      img.onload = () => {
+        if (img.width && img.height) {
+          const changed = data.width !== img.width || data.height !== img.height;
+          data.width = img.width;
+          data.height = img.height;
+          
+          // Only refresh if dimensions changed and the gallery is active
+          if (changed && lightbox.value?.pswp) {
+            lightbox.value.pswp.refreshSlideContent(event.index);
+          }
+        }
+      };
+    }
+  });
+
+  lightbox.value.init();
+
+  // Handle closing via browser Back button/gesture
   window.addEventListener('popstate', (event) => {
+    // 1. Handle PhotoSwipe
+    if (lightbox.value?.pswp) {
+      lightbox.value.pswp.close();
+      return;
+    }
+
+    // 2. Handle Custom Preview (Videos/Text)
+    if (previewItem.value) {
+      closePreview(false); // Close without triggering history.back()
+      return;
+    }
+
     const path = event.state?.path || window.location.hash.slice(1) || '/';
     handleNavigate(decodeURIComponent(path), false);
+  });
+
+  // Sync history when PhotoSwipe is closed via UI/Esc
+  lightbox.value.on('close', () => {
+    if (history.state?.pswp) {
+      history.back();
+    }
   });
 
   window.addEventListener('keydown', handleKeydown);
@@ -159,15 +226,48 @@ const { data: textContent, isLoading: isTextLoading } = useQuery({
 });
 
 const handlePreview = (item: FileItem) => {
+  // If it's an image (and not a PDF), PhotoSwipe handles it.
+  if ((item.capabilities & CAP_RENDER) && !item.name.toLowerCase().endsWith('.pdf')) {
+    if (lightbox.value && displayItems.value) {
+      // Find all items that are images
+      const imageItems = displayItems.value.filter(i => (i.capabilities & CAP_RENDER) && !i.name.toLowerCase().endsWith('.pdf'));
+      const index = imageItems.findIndex(i => i.path === item.path);
+      
+      if (index !== -1) {
+        // Map all image items to PhotoSwipe data source format
+        const dataSource = imageItems.map(i => ({
+          src: getRawUrl(i.path),
+          // We omit width/height here; gettingData event fixes them on load
+          alt: i.name,
+          msrc: getThumbUrl(i.path), // Provide thumbnail for faster initial display
+          element: document.querySelector(`[data-pswp-src="${getRawUrl(i.path)}"]`) as HTMLElement || undefined
+        }));
+
+        // Push a state so "Back" button closes the gallery
+        history.pushState({ pswp: true }, '');
+        lightbox.value.loadAndOpen(index, dataSource);
+      }
+    }
+    return;
+  }
+  
+  // Custom Preview (Video/Text)
+  history.pushState({ customPreview: true }, '');
   previewItem.value = item;
   showInfo.value = false;
 };
 
-const closePreview = () => {
+const closePreview = (triggerBack = true) => {
   if (player) {
     player.destroy();
     player = null;
   }
+  
+  // If we closed via UI/Esc and there's a history entry to pop
+  if (triggerBack && history.state?.customPreview) {
+    history.back();
+  }
+  
   previewItem.value = null;
 };
 
@@ -230,6 +330,10 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
+  if (lightbox.value) {
+    lightbox.value.destroy();
+    lightbox.value = null;
+  }
 });
 </script>
 
@@ -365,7 +469,7 @@ onUnmounted(() => {
       <div 
         v-if="previewItem" 
         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl"
-        @click="closePreview"
+        @click="closePreview()"
       >
         <!-- Navigation Buttons -->
         <button 
@@ -406,7 +510,7 @@ onUnmounted(() => {
                 Raw File
               </a>
               <button 
-                @click="closePreview"
+                @click="closePreview()"
                 class="p-2.5 bg-white/10 hover:bg-rose-500 text-white rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
                 aria-label="Close preview"
               >

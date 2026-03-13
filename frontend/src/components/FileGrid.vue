@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useVirtualizer } from '@tanstack/vue-virtual';
-import { CAP_BROWSE, CAP_RENDER, getThumbUrl } from '../api';
+import { CAP_BROWSE, CAP_RENDER, getThumbUrl, getRawUrl } from '../api';
 import type { FileItem } from '../api';
 import FileIcon from './FileIcon.vue';
 
@@ -84,6 +84,7 @@ const handleThumbError = (path: string) => {
 <template>
   <div 
     ref="containerRef" 
+    id="file-grid"
     class="h-full overflow-y-auto overflow-x-hidden p-2 sm:p-6 bg-gray-50/30 relative"
   >
     <!-- Item Count Badge -->
@@ -118,6 +119,7 @@ const handleThumbError = (path: string) => {
           :key="item.path"
           @click="handleItemClick(item)"
           class="flex flex-col items-center p-2 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer w-28 sm:w-36 group border border-transparent hover:border-blue-100/50"
+          :data-pswp-src="(item.capabilities & CAP_RENDER) && !item.name.toLowerCase().endsWith('.pdf') ? getRawUrl(item.path) : undefined"
         >
           <div class="relative w-20 h-20 sm:w-28 sm:h-28 bg-white rounded-2xl shadow-sm overflow-hidden flex items-center justify-center group-hover:scale-[1.02] group-active:scale-95 transition-transform duration-300 ring-1 ring-black/5">
             <!-- Thumbnail with fallback -->
