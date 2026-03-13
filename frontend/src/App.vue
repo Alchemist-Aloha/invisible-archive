@@ -642,7 +642,7 @@ onUnmounted(() => {
               </div>
 
               <!-- Video Stage -->
-              <div v-else-if="previewItem.capabilities & CAP_STREAM" :key="previewItem.path + '-v'" class="w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video">
+              <div v-else-if="previewItem.capabilities & CAP_STREAM" :key="previewItem.path + '-v'" class="w-full h-full flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl bg-black">
                 <video 
                   ref="videoElement"
                   playsinline 
