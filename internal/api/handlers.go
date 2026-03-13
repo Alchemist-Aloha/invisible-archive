@@ -2,9 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
+	"mime"
 	"net/http"
 	"path"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/likun/invisible-archive/internal/vfs"
@@ -79,6 +82,17 @@ func (h *Handler) Raw(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API: Failed to stat %s: %v", pathParam, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// Set Content-Type
+	contentType := mime.TypeByExtension(filepath.Ext(stat.Name()))
+	if contentType != "" {
+		w.Header().Set("Content-Type", contentType)
+	}
+
+	// Handle Download
+	if r.URL.Query().Get("download") != "" {
+		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=%q", stat.Name()))
 	}
 
 	http.ServeContent(w, r, stat.Name(), stat.ModTime(), reader)

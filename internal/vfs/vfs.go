@@ -241,6 +241,8 @@ func (z *zipStreamSeeker) Read(p []byte) (n int, err error) {
 		z.rc = rc
 		if z.offset > 0 {
 			if _, err := io.CopyN(io.Discard, z.rc, z.offset); err != nil {
+				z.rc.Close()
+				z.rc = nil
 				return 0, err
 			}
 		}

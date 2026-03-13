@@ -28,11 +28,15 @@ export const searchFiles = async (q: string): Promise<FileItem[]> => {
   return data;
 };
 
-export const getRawUrl = (path: string) => {
+export const getRawUrl = (path: string, download: boolean = false) => {
   // Remove leading slash if present to avoid double slashes after /raw/
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
-  return `${api.defaults.baseURL}/raw/${encodedPath}`;
+  let url = `${api.defaults.baseURL}/raw/${encodedPath}`;
+  if (download) {
+    url += '?download=1';
+  }
+  return url;
 };
 
 export const getThumbUrl = (path: string) => {

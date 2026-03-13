@@ -45,3 +45,5 @@ thumbs/
 
 # Docker
 .docker
+server.log
+test_library/test_video.mp4

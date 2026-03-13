@@ -22,7 +22,7 @@ func GetCapabilities(name string, isDir bool) uint32 {
 
 	ext := filepath.Ext(nameLower)
 	switch ext {
-	case ".mp4", ".mkv", ".webm", ".mp3", ".wav":
+	case ".mp4", ".mkv", ".webm", ".mp3", ".wav", ".m4v":
 		caps |= CapStream
 	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf":
 		caps |= CapRender
