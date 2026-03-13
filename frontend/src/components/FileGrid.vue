@@ -145,7 +145,7 @@ const handleThumbError = (path: string) => {
             class="flex flex-col items-center p-2 rounded-2xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer w-28 sm:w-36 group border border-transparent hover:border-blue-100/50 dark:hover:border-blue-900/30"
             :data-pswp-src="(item.capabilities & CAP_RENDER) && !item.name.toLowerCase().endsWith('.pdf') ? getRawUrl(item.path) : undefined"
           >
-            <div class="relative w-20 h-20 sm:w-28 sm:h-28 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden flex items-center justify-center group-hover:scale-[1.02] group-active:scale-95 transition-transform duration-300 ring-1 ring-black/5 dark:ring-white/5">
+            <div class="shrink-0 relative w-20 h-20 sm:w-28 sm:h-28 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden flex items-center justify-center group-hover:scale-[1.02] group-active:scale-95 transition-transform duration-300 ring-1 ring-black/5 dark:ring-white/5">
               <!-- Thumbnail with fallback -->
               <img 
                 v-if="(item.capabilities & CAP_RENDER) && !thumbErrors[item.path]"
