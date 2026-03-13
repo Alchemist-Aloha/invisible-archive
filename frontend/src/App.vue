@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { Search, Loader2, X, AlertCircle, ChevronLeft, Download, Info, FileText } from 'lucide-vue-next';
-import { fetchList, searchFiles, getRawUrl, fetchText, CAP_STREAM, CAP_RENDER, CAP_EDIT } from './api';
+import { 
+  Search, 
+  Loader2, 
+  X, 
+  AlertCircle, 
+  ChevronLeft, 
+  ChevronRight, 
+  Download, 
+  Info, 
+  FileText 
+} from 'lucide-vue-next';
+import { fetchList, searchFiles, getRawUrl, fetchText, CAP_STREAM, CAP_RENDER, CAP_EDIT, CAP_BROWSE } from './api';
 import type { FileItem } from './api';
 import Breadcrumbs from './components/Breadcrumbs.vue';
 import FileGrid from './components/FileGrid.vue';
@@ -75,7 +85,36 @@ const closePreview = () => {
   previewItem.value = null;
 };
 
-watch(previewItem, (newItem) => {
+// Navigation logic for preview
+const navigatePreview = (direction: 'prev' | 'next') => {
+  if (!previewItem.value || !displayItems.value) return;
+  
+  const list = displayItems.value;
+  const currentIndex = list.findIndex(item => item.path === previewItem.value!.path);
+  if (currentIndex === -1) return;
+
+  const step = direction === 'next' ? 1 : -1;
+  let nextIndex = currentIndex;
+  
+  // Find next non-directory item
+  for (let i = 0; i < list.length; i++) {
+    nextIndex = (nextIndex + step + list.length) % list.length;
+    const item = list[nextIndex];
+    // Skip folders and things that should be browsed (archives)
+    if (!item.is_dir && !(item.capabilities & CAP_BROWSE)) {
+      handlePreview(item);
+      return;
+    }
+  }
+};
+
+watch(previewItem, (newItem, oldItem) => {
+  // If we changed items while previewing, clean up old player
+  if (player && newItem?.path !== oldItem?.path) {
+    player.destroy();
+    player = null;
+  }
+
   if (newItem && (newItem.capabilities & CAP_STREAM)) {
     setTimeout(() => {
       if (videoElement.value) {
@@ -88,11 +127,25 @@ watch(previewItem, (newItem) => {
   }
 });
 
+const handleKeydown = (e: KeyboardEvent) => {
+  if (!previewItem.value) {
+    if (e.key === 'Backspace' && !isSearching.value) goBack();
+    return;
+  }
+
+  switch (e.key) {
+    case 'Escape': closePreview(); break;
+    case 'ArrowLeft': navigatePreview('prev'); break;
+    case 'ArrowRight': navigatePreview('next'); break;
+  }
+};
+
 onMounted(() => {
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && previewItem.value) closePreview();
-    if (e.key === 'Backspace' && !previewItem.value && !isSearching.value) goBack();
-  });
+  window.addEventListener('keydown', handleKeydown);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown);
 });
 </script>
 
@@ -107,7 +160,7 @@ onMounted(() => {
         >
           <div class="w-4 h-4 sm:w-5 sm:h-5 border-[2.5px] border-white rounded-[3px] rotate-45"></div>
         </div>
-        <div class="hidden xs:block">
+        <div class="hidden min-[480px]:block">
           <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-800 leading-none">
             Archive
           </h1>
@@ -182,8 +235,8 @@ onMounted(() => {
           </div>
           <h2 class="text-xl font-black text-slate-800 mb-3">Service Unavailable</h2>
           <p class="text-slate-500 mb-8 text-sm leading-relaxed">The archive engine is currently unreachable. This might be due to a connection drop or server maintenance.</p>
-          <button @click="() => refetch()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full text-sm font-semibold transition-colors">
-            Retry Connection
+          <button @click="() => refetch()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/25 transition-all">
+            Reconnect to Engine
           </button>
         </div>
       </div>
@@ -224,6 +277,20 @@ onMounted(() => {
         class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl"
         @click="closePreview"
       >
+        <!-- Navigation Buttons -->
+        <button 
+          @click.stop="navigatePreview('prev')"
+          class="hidden sm:flex absolute left-4 top-1/2 -translate-y-1/2 w-14 h-14 items-center justify-center bg-white/5 hover:bg-white/10 text-white rounded-full transition-all z-50 border border-white/5"
+        >
+          <ChevronLeft class="w-8 h-8" />
+        </button>
+        <button 
+          @click.stop="navigatePreview('next')"
+          class="hidden sm:flex absolute right-4 top-1/2 -translate-y-1/2 w-14 h-14 items-center justify-center bg-white/5 hover:bg-white/10 text-white rounded-full transition-all z-50 border border-white/5"
+        >
+          <ChevronRight class="w-8 h-8" />
+        </button>
+
         <div class="w-full h-full flex flex-col sm:p-6" @click.stop>
           <!-- Preview Top Bar -->
           <div class="flex items-center justify-between p-4 sm:px-2">
@@ -231,7 +298,7 @@ onMounted(() => {
               <div class="p-2 bg-white/10 rounded-lg text-white">
                 <FileIcon :name="previewItem.name" :isDir="false" :capabilities="previewItem.capabilities" class="w-5 h-5" />
               </div>
-              <div class="truncate">
+              <div class="truncate text-left">
                 <h4 class="text-white text-sm font-bold truncate">{{ previewItem.name }}</h4>
                 <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ (previewItem.size / 1024 / 1024).toFixed(2) }} MB</p>
               </div>
@@ -256,12 +323,13 @@ onMounted(() => {
           </div>
 
           <!-- Main Stage -->
-          <div class="flex-1 flex items-center justify-center p-2 sm:p-8 overflow-hidden">
+          <div class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
             <!-- Image Stage -->
-            <div v-if="previewItem.capabilities & CAP_RENDER" class="relative group max-w-full max-h-full">
+            <div v-if="previewItem.capabilities & CAP_RENDER" class="w-full h-full flex items-center justify-center">
               <img 
+                :key="previewItem.path"
                 :src="getRawUrl(previewItem.path)"
-                class="max-w-full max-h-full object-contain shadow-[0_32px_64px_rgba(0,0,0,0.5)] rounded-lg"
+                class="max-w-full max-h-full object-contain shadow-[0_32px_64px_rgba(0,0,0,0.5)] rounded-sm transition-opacity duration-300"
               >
             </div>
 
@@ -290,7 +358,7 @@ onMounted(() => {
                 </div>
               </div>
               <div class="flex-1 overflow-auto p-6 sm:p-10 font-mono text-sm leading-relaxed text-slate-300 selection:bg-blue-500/30">
-                <pre v-if="textContent" class="whitespace-pre-wrap break-all">{{ textContent }}</pre>
+                <pre v-if="textContent" class="whitespace-pre-wrap break-all text-left">{{ textContent }}</pre>
                 <div v-else-if="isTextLoading" class="h-full flex items-center justify-center">
                   <div class="space-y-4 w-full max-w-md">
                     <div class="h-4 bg-white/5 rounded-full w-3/4 animate-pulse"></div>
@@ -319,14 +387,28 @@ onMounted(() => {
           </div>
 
           <!-- Mobile Actions -->
-          <div class="sm:hidden p-4 grid grid-cols-1 gap-3">
+          <div class="sm:hidden p-4 grid grid-cols-2 gap-3">
+            <button 
+              @click.stop="navigatePreview('prev')"
+              class="flex items-center justify-center gap-2 py-4 bg-white/10 text-white rounded-2xl text-sm font-bold"
+            >
+              <ChevronLeft class="w-5 h-5" />
+              Prev
+            </button>
+            <button 
+              @click.stop="navigatePreview('next')"
+              class="flex items-center justify-center gap-2 py-4 bg-white/10 text-white rounded-2xl text-sm font-bold"
+            >
+              Next
+              <ChevronRight class="w-5 h-5" />
+            </button>
             <a 
               :href="getRawUrl(previewItem.path)" 
               download
-              class="flex items-center justify-center gap-2 py-4 bg-white/10 text-white rounded-2xl text-sm font-bold"
+              class="col-span-2 flex items-center justify-center gap-2 py-4 bg-blue-600 text-white rounded-2xl text-sm font-bold"
             >
               <Download class="w-5 h-5" />
-              Download
+              Download Raw
             </a>
           </div>
         </div>
@@ -361,8 +443,4 @@ onMounted(() => {
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-xs\:block {
-  @media (min-width: 480px) { display: block; }
-}
 </style>

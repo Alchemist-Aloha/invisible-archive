@@ -23,13 +23,20 @@ const updateWidth = () => {
   }
 };
 
+let observer: ResizeObserver | null = null;
+
 onMounted(() => {
   updateWidth();
-  window.addEventListener('resize', updateWidth);
+  if (containerRef.value) {
+    observer = new ResizeObserver(() => updateWidth());
+    observer.observe(containerRef.value);
+  }
 });
 
 onUnmounted(() => {
-  window.removeEventListener('resize', updateWidth);
+  if (observer) {
+    observer.disconnect();
+  }
 });
 
 // Precise column calculation for a balanced grid

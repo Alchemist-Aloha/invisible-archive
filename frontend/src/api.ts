@@ -29,7 +29,10 @@ export const searchFiles = async (q: string): Promise<FileItem[]> => {
 };
 
 export const getRawUrl = (path: string) => {
-  return `${api.defaults.baseURL}/raw/${path}`;
+  // Remove leading slash if present to avoid double slashes after /raw/
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
+  return `${api.defaults.baseURL}/raw/${encodedPath}`;
 };
 
 export const getThumbUrl = (path: string) => {
@@ -37,7 +40,9 @@ export const getThumbUrl = (path: string) => {
 };
 
 export const fetchText = async (path: string): Promise<string> => {
-  const { data } = await api.get<string>(`/raw/${path}`, { responseType: 'text' });
+  const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+  const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
+  const { data } = await api.get<string>(`/raw/${encodedPath}`, { responseType: 'text' });
   return data;
 };
 
