@@ -20,7 +20,14 @@ import FileGrid from './components/FileGrid.vue';
 import Plyr from 'plyr';
 import 'plyr/dist/plyr.css';
 
-const currentPath = ref('/');
+// Path state with URL and localStorage sync
+const getInitialPath = () => {
+  const hash = window.location.hash.slice(1);
+  if (hash) return decodeURIComponent(hash);
+  return localStorage.getItem('lastPath') || '/';
+};
+
+const currentPath = ref(getInitialPath());
 const searchQuery = ref('');
 const isSearching = ref(false);
 const previewItem = ref<FileItem | null>(null);
@@ -29,6 +36,33 @@ const videoElement = ref<HTMLVideoElement | null>(null);
 const previewStage = ref<HTMLElement | null>(null);
 const transitionName = ref('slide-next');
 let player: Plyr | null = null;
+
+// Persistence and Navigation
+const handleNavigate = (path: string, pushState = true) => {
+  searchQuery.value = '';
+  isSearching.value = false;
+  currentPath.value = path;
+  localStorage.setItem('lastPath', path);
+  
+  if (pushState) {
+    history.pushState({ path }, '', '#' + encodeURIComponent(path));
+  }
+};
+
+// Handle browser back/forward and mobile swipe gestures
+onMounted(() => {
+  window.addEventListener('popstate', (event) => {
+    const path = event.state?.path || window.location.hash.slice(1) || '/';
+    handleNavigate(decodeURIComponent(path), false);
+  });
+
+  window.addEventListener('keydown', handleKeydown);
+
+  // Update URL if missing on load
+  if (!window.location.hash && currentPath.value !== '/') {
+    history.replaceState({ path: currentPath.value }, '', '#' + encodeURIComponent(currentPath.value));
+  }
+});
 
 // Preload Engine: Fetch upcoming images in the background
 watch(previewItem, (item) => {
@@ -68,12 +102,6 @@ const { data: items, isLoading, error, refetch } = useQuery({
   enabled: !isSearching.value,
   retry: 1,
 });
-
-const handleNavigate = (path: string) => {
-  searchQuery.value = '';
-  isSearching.value = false;
-  currentPath.value = path;
-};
 
 const goBack = () => {
   if (currentPath.value === '/') return;
@@ -176,10 +204,6 @@ const handleKeydown = (e: KeyboardEvent) => {
     case 'ArrowRight': navigatePreview('next'); break;
   }
 };
-
-onMounted(() => {
-  window.addEventListener('keydown', handleKeydown);
-});
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);

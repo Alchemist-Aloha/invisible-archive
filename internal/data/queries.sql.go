@@ -87,7 +87,7 @@ const searchItems = `-- name: SearchItems :many
 SELECT id, parent_path, name, path, is_dir, size, mod_time, capabilities, is_inside_zip, indexed_at
 FROM items
 WHERE name LIKE ? OR path LIKE ?
-LIMIT 50
+LIMIT 1000
 `
 
 type SearchItemsParams struct {

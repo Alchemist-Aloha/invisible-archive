@@ -18,7 +18,7 @@ ORDER BY is_dir DESC, name ASC;
 SELECT *
 FROM items
 WHERE name LIKE ? OR path LIKE ?
-LIMIT 50;
+LIMIT 1000;
 
 -- name: DeleteItemsByPathPrefix :exec
 DELETE FROM items
