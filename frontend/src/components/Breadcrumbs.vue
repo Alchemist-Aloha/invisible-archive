@@ -29,8 +29,9 @@ const segments = computed(() => {
   <nav class="flex items-center space-x-2 px-6 py-2.5 bg-white border-b border-gray-200 text-xs overflow-x-auto no-scrollbar z-10 shadow-sm">
     <button 
       @click="emit('navigate', '/')"
-      class="p-1.5 rounded-md hover:bg-blue-50 transition-all text-gray-400 hover:text-blue-600 group"
+      class="p-1.5 rounded-md hover:bg-blue-50 transition-all text-gray-400 hover:text-blue-600 group focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
       title="Root Library"
+      aria-label="Root Library"
     >
       <Home class="w-4 h-4 group-hover:fill-blue-50" />
     </button>
