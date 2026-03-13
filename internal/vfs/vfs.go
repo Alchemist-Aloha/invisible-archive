@@ -160,7 +160,7 @@ func (m *Manager) readZipDir(r *zip.ReadCloser, vPath string) ([]os.FileInfo, er
 		var name string
 		var isDir bool
 
-		// ⚡ Bolt: Use IndexByte instead of Split for zero-allocation fast path
+		// Use IndexByte instead of Split for a zero-allocation fast path
 		if vPath == "" {
 			idx := strings.IndexByte(fPath, '/')
 			if idx >= 0 {
