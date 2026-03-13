@@ -104,11 +104,11 @@ const handleThumbError = (path: string) => {
   <div 
     ref="containerRef" 
     id="file-grid"
-    class="h-full overflow-y-auto overflow-x-hidden p-1 sm:p-6 bg-gray-50/30 dark:bg-slate-950/30 relative transition-colors duration-300"
+    class="h-full overflow-y-auto overflow-x-hidden p-1 sm:p-6 bg-gray-50/30 dark:bg-dracula-950/30 relative transition-colors duration-300"
   >
     <!-- Item Count Badge (More stable on mobile) -->
     <div v-if="items.length > 0" class="flex justify-end px-4 py-2 sticky top-0 z-10 pointer-events-none">
-      <span class="px-2 py-1 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold text-slate-400 dark:text-slate-500 shadow-sm uppercase tracking-wider pointer-events-auto">
+      <span class="px-2 py-1 bg-white/90 dark:bg-dracula-800/90 backdrop-blur border border-slate-200 dark:border-dracula-700 rounded-lg text-[10px] font-bold text-slate-400 dark:text-dracula-500 shadow-sm uppercase tracking-wider pointer-events-auto">
         {{ items.length }} items
       </span>
     </div>
@@ -142,10 +142,10 @@ const handleThumbError = (path: string) => {
             v-for="item in getRowItems(virtualRow.index)"
             :key="item.path"
             @click="handleItemClick(item)"
-            class="flex flex-col items-center p-2 rounded-2xl hover:bg-white dark:hover:bg-slate-800 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer w-28 sm:w-36 group border border-transparent hover:border-blue-100/50 dark:hover:border-blue-900/30"
+            class="flex flex-col items-center p-2 rounded-2xl hover:bg-white dark:hover:bg-dracula-800 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer w-28 sm:w-36 group border border-transparent hover:border-blue-100/50 dark:hover:border-blue-900/30"
             :data-pswp-src="(item.capabilities & CAP_RENDER) && !item.name.toLowerCase().endsWith('.pdf') ? getRawUrl(item.path) : undefined"
           >
-            <div class="relative w-20 h-20 sm:w-28 sm:h-28 bg-white dark:bg-slate-900 rounded-2xl shadow-sm overflow-hidden flex items-center justify-center group-hover:scale-[1.02] group-active:scale-95 transition-transform duration-300 ring-1 ring-black/5 dark:ring-white/5">
+            <div class="relative w-20 h-20 sm:w-28 sm:h-28 bg-white dark:bg-dracula-900 rounded-2xl shadow-sm overflow-hidden flex items-center justify-center group-hover:scale-[1.02] group-active:scale-95 transition-transform duration-300 ring-1 ring-black/5 dark:ring-white/5">
               <!-- Thumbnail with fallback -->
               <img 
                 v-if="(item.capabilities & CAP_RENDER) && !thumbErrors[item.path]"
@@ -154,7 +154,7 @@ const handleThumbError = (path: string) => {
                 class="w-full h-full object-cover"
                 loading="lazy"
               >
-              <div v-else class="p-4 sm:p-6 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-slate-800 dark:to-slate-900">
+              <div v-else class="p-4 sm:p-6 w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-50 to-white dark:from-dracula-800 dark:to-dracula-900">
                 <FileIcon :name="item.name" :isDir="item.is_dir" :capabilities="item.capabilities" />
               </div>
               
@@ -169,12 +169,12 @@ const handleThumbError = (path: string) => {
             
             <div class="mt-3 w-full px-1">
               <span 
-                class="block text-[11px] sm:text-[13px] font-semibold text-gray-700 dark:text-slate-300 text-center line-clamp-2 break-all leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                class="block text-[11px] sm:text-[13px] font-semibold text-gray-700 dark:text-dracula-300 text-center line-clamp-2 break-all leading-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
                 :title="item.name"
               >
                 {{ truncateName(item.name, 40) }}
               </span>
-              <span v-if="!item.is_dir" class="block mt-1 text-[10px] text-gray-400 dark:text-slate-500 text-center font-medium opacity-0 group-hover:opacity-100 transition-opacity">
+              <span v-if="!item.is_dir" class="block mt-1 text-[10px] text-gray-400 dark:text-dracula-500 text-center font-medium opacity-0 group-hover:opacity-100 transition-opacity">
                 {{ (item.size / 1024 / 1024).toFixed(1) }} MB
               </span>
             </div>
@@ -187,7 +187,7 @@ const handleThumbError = (path: string) => {
             v-for="item in getRowItems(virtualRow.index)"
             :key="item.path"
             @click="handleItemClick(item)"
-            class="flex items-center px-4 py-2 rounded-xl hover:bg-white dark:hover:bg-slate-800/50 hover:shadow-sm transition-all duration-200 cursor-pointer group border border-transparent hover:border-slate-200/50 dark:hover:border-slate-700/50"
+            class="flex items-center px-4 py-2 rounded-xl hover:bg-white dark:hover:bg-dracula-800/50 hover:shadow-sm transition-all duration-200 cursor-pointer group border border-transparent hover:border-slate-200/50 dark:hover:border-dracula-700/50"
             :data-pswp-src="(item.capabilities & CAP_RENDER) && !item.name.toLowerCase().endsWith('.pdf') ? getRawUrl(item.path) : undefined"
           >
             <div class="w-8 h-8 flex-shrink-0 mr-4">
@@ -196,14 +196,14 @@ const handleThumbError = (path: string) => {
             
             <div class="flex-1 min-w-0 flex items-center justify-between gap-4">
               <span 
-                class="text-sm font-medium text-slate-700 dark:text-slate-300 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
+                class="text-sm font-medium text-slate-700 dark:text-dracula-300 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors"
                 :title="item.name"
               >
                 {{ item.name }}
               </span>
 
               <!-- Details specific info -->
-              <div v-if="layout === 'details'" class="hidden sm:flex items-center gap-8 text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider shrink-0">
+              <div v-if="layout === 'details'" class="hidden sm:flex items-center gap-8 text-[11px] font-bold text-slate-400 dark:text-dracula-500 uppercase tracking-wider shrink-0">
                 <span class="w-20 text-right">{{ item.is_dir ? '--' : (item.size / 1024 / 1024).toFixed(2) + ' MB' }}</span>
                 <span class="w-32 text-right">{{ new Date(item.mod_time * 1000).toLocaleDateString() }}</span>
               </div>
