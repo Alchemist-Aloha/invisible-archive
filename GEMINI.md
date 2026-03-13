@@ -25,6 +25,7 @@
     *   `TanStack Vue Virtual`: Efficient rendering of large file lists (100k+ items).
     *   `VueUse`: Swipe navigation gestures for mobile devices (`useSwipe`).
     *   `Vite Plugin PWA`: Mobile installability and Service Worker management.
+    *   `PhotoSwipe v5`: High-performance image viewer with pinch-zoom and 1:1 touch tracking.
     *   `Plyr`: Modern, accessible video player integration.
     *   `Lucide Vue Next`: Clean and consistent icon set.
 *   **Deployment:** Docker (Multi-stage build).
@@ -79,7 +80,7 @@
 
 ### Phase 5: Hardening & Docker
 1.  **Security:** Sanitize internal ZIP paths ("Zip Slip") and enforce read-only mounts.
-2.  **Dockerization:** Alpine-based multi-stage build with `libvips` dependencies.
+2.  **Dockerization:** Alpine-based multi-stage build optimized for zero-dependency portability (CGO-free).
 
 ---
 

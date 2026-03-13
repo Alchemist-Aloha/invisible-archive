@@ -15,6 +15,7 @@ Invisible Archive is a high-performance, self-hosted file management system desi
     - **Hybrid Indexing:** Instant search (<5ms for 1M files) using SQLite FTS5. Indexing is lazy and opportunistic to minimize disk IO.
 - **High-Performance Streaming:** Native support for HTTP Range requests (206 Partial Content), allowing for $O(1)$ seeking in videos and large media files.
 - **Smart Image Pipeline:** Throttled, pure-Go thumbnail generation with a "Fast Identity" cache system to prevent NAS CPU spikes.
+- **Mobile-First Experience:** PWA-ready with native-like touch gestures, including pinch-to-zoom, dynamic panning, and history-aware back navigation.
 - **Modern UI:** Responsive "Finder-style" interface built with Vue 3, featuring virtual scrolling for directories with 100,000+ items.
 
 ## 🛠 Tech Stack
@@ -28,7 +29,8 @@ Invisible Archive is a high-performance, self-hosted file management system desi
 ### Frontend (Vue 3)
 - **State Management:** `TanStack Query` for robust server-state synchronization.
 - **Virtualization:** `TanStack Virtual` for high-density list rendering.
-- **Styling:** `Tailwind CSS` + `Lucide` icons.
+- **Image Viewer:** `PhotoSwipe v5` for high-performance, gesture-driven browsing.
+- **Styling:** `Tailwind CSS v4` + `Lucide` icons.
 
 ## 📦 Deployment
 
