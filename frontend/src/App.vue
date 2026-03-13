@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
+import { useSwipe } from '@vueuse/core';
 import { 
   Search, 
   Loader2, 
@@ -25,7 +26,16 @@ const isSearching = ref(false);
 const previewItem = ref<FileItem | null>(null);
 const showInfo = ref(false);
 const videoElement = ref<HTMLVideoElement | null>(null);
+const previewStage = ref<HTMLElement | null>(null);
 let player: Plyr | null = null;
+
+// Swipe navigation
+useSwipe(previewStage, {
+  onSwipeEnd(_e, direction) {
+    if (direction === 'left') navigatePreview('next');
+    if (direction === 'right') navigatePreview('prev');
+  },
+});
 
 const { data: items, isLoading, error, refetch } = useQuery({
   queryKey: ['files', currentPath],
@@ -323,7 +333,7 @@ onUnmounted(() => {
           </div>
 
           <!-- Main Stage -->
-          <div class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
+          <div ref="previewStage" class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
             <!-- Image Stage -->
             <div v-if="previewItem.capabilities & CAP_RENDER" class="w-full h-full flex items-center justify-center">
               <img 

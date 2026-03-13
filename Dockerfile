@@ -2,7 +2,7 @@
 FROM node:20-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm install --legacy-peer-deps
 COPY frontend/ ./
 RUN npm run build
 
@@ -16,6 +16,7 @@ RUN go build -o server ./cmd/server/main.go
 
 # Stage 3: Final Runtime
 FROM alpine:latest
+RUN apk add --no-cache ca-certificates tzdata
 WORKDIR /app
 COPY --from=backend-builder /app/server .
 COPY --from=frontend-builder /app/frontend/dist ./public

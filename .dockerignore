@@ -1,0 +1,17 @@
+.git
+.vscode
+node_modules
+frontend/node_modules
+frontend/dist
+dist
+vendor
+cache
+library
+*.db
+*.db-*
+.env
+.env.*
+README.md
+GEMINI.md
+Dockerfile
+docker-compose.yml
