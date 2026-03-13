@@ -46,7 +46,7 @@ const showInfo = ref(false);
 const videoElement = ref<HTMLVideoElement | null>(null);
 const previewStage = ref<HTMLElement | null>(null);
 const transitionName = ref('slide-next');
-let player: Plyr | null = null;
+const player = ref<Plyr | null>(null);
 const lightbox = ref<PhotoSwipeLightbox | null>(null);
 
 // Seek variables for video
@@ -54,6 +54,32 @@ const isSeeking = ref(false);
 const seekDelta = ref(0);
 const initialSeekTime = ref(0);
 const shouldIgnoreSwipe = ref(false);
+
+const cleanupPlayer = () => {
+  if (player.value) {
+    player.value.destroy();
+    player.value = null;
+  }
+};
+
+const initPlayer = () => {
+  if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM) && videoElement.value) {
+    cleanupPlayer();
+    player.value = new Plyr(videoElement.value, {
+      autoplay: true,
+      hideControls: true,
+      controls: [
+        'play-large',
+        'play',
+        'progress',
+        'current-time',
+        'mute',
+        'volume',
+        'fullscreen',
+      ],
+    });
+  }
+};
 
 // Swipe navigation and Video Seek
 const { distanceX, isSwiping } = usePointerSwipe(previewStage, {
@@ -68,21 +94,21 @@ const { distanceX, isSwiping } = usePointerSwipe(previewStage, {
   onSwipe() {
     if (shouldIgnoreSwipe.value) return;
 
-    if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM) && player) {
+    if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM) && player.value) {
       // Threshold: 10px movement to start seeking
       if (!isSeeking.value && Math.abs(distanceX.value) > 10) {
         isSeeking.value = true;
-        initialSeekTime.value = player.currentTime;
+        initialSeekTime.value = player.value.currentTime;
       }
 
       if (isSeeking.value) {
         // 90 seconds per screen width
-        const scrubAmount = Math.min(player.duration, 90);
+        const scrubAmount = Math.min(player.value.duration, 90);
         const deltaX = -distanceX.value; // distanceX is positive when swiping left
         seekDelta.value = (deltaX / window.innerWidth) * scrubAmount;
         
         let newTime = initialSeekTime.value + seekDelta.value;
-        player.currentTime = Math.max(0, Math.min(newTime, player.duration));
+        player.value.currentTime = Math.max(0, Math.min(newTime, player.value.duration));
       }
     }
   },
@@ -361,10 +387,7 @@ const handlePreview = (item: FileItem) => {
 };
 
 const closePreview = (triggerBack = true) => {
-  if (player) {
-    player.destroy();
-    player = null;
-  }
+  cleanupPlayer();
   
   // If we closed via UI/Esc and there's a history entry to pop
   if (triggerBack && history.state?.customPreview) {
@@ -401,29 +424,8 @@ const navigatePreview = (direction: 'prev' | 'next') => {
 
 watch(previewItem, (newItem, oldItem) => {
   // If we changed items while previewing, clean up old player
-  if (player && newItem?.path !== oldItem?.path) {
-    player.destroy();
-    player = null;
-  }
-
-  if (newItem && (newItem.capabilities & CAP_STREAM)) {
-    setTimeout(() => {
-      if (videoElement.value) {
-        player = new Plyr(videoElement.value, {
-          autoplay: true,
-          hideControls: true,
-          controls: [
-            'play-large',
-            'play',
-            'progress',
-            'current-time',
-            'mute',
-            'volume',
-            'fullscreen',
-          ],
-        });
-      }
-    }, 100);
+  if (newItem?.path !== oldItem?.path) {
+    cleanupPlayer();
   }
 });
 
@@ -687,7 +689,7 @@ onUnmounted(() => {
             class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden relative"
             :class="{ 'touch-none': previewItem?.capabilities & CAP_STREAM }"
           >
-            <Transition :name="transitionName" mode="out-in">
+            <Transition :name="transitionName" mode="out-in" @after-enter="initPlayer">
               <!-- Image Stage -->
               <div v-if="previewItem.capabilities & CAP_RENDER" :key="previewItem.path" class="w-full h-full flex items-center justify-center">
                 <img 
