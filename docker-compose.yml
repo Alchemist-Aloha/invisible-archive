@@ -1,0 +1,23 @@
+services:
+  invisible-archive:
+    build: .
+    image: invisible-archive:latest
+    container_name: invisible-archive
+    ports:
+      - "${APP_PORT:-8881}:8080"
+    volumes:
+      # Mount your media library as Read-Only
+      - ${LIBRARY_DIR}:/library:ro
+      # Persistent storage for thumbnails and the SQLite database
+      - ${CACHE_DIR}:/cache
+    environment:
+      - PORT=8080
+      - LIBRARY_PATH=/library
+      - CACHE_DIR=/cache
+      - DB_PATH=/cache/archive.db
+    restart: unless-stopped
+    # Optional: limit resources for NAS stability
+    deploy:
+      resources:
+        limits:
+          memory: 512M
