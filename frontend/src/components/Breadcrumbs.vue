@@ -11,29 +11,35 @@ const emit = defineEmits<{
 }>();
 
 const segments = computed(() => {
-  if (props.path === '.' || props.path === '') return [];
-  const parts = props.path.split('/');
-  return parts.map((name, index) => ({
-    name,
-    path: parts.slice(0, index + 1).join('/'),
-  }));
+  const p = props.path.startsWith('/') ? props.path.slice(1) : props.path;
+  if (p === '' || p === '.') return [];
+
+  const parts = p.split('/');
+  return parts.map((name, index) => {
+    const segmentPath = '/' + parts.slice(0, index + 1).join('/');
+    return {
+      name,
+      path: segmentPath,
+    };
+  });
 });
 </script>
 
 <template>
-  <nav class="flex items-center space-x-2 px-4 py-2 bg-white border-b border-gray-200 text-sm overflow-x-auto no-scrollbar">
+  <nav class="flex items-center space-x-2 px-6 py-2.5 bg-white border-b border-gray-200 text-xs overflow-x-auto no-scrollbar z-10 shadow-sm">
     <button 
-      @click="emit('navigate', '.')"
-      class="p-1 rounded hover:bg-gray-100 transition-colors text-gray-500 hover:text-blue-600"
+      @click="emit('navigate', '/')"
+      class="p-1.5 rounded-md hover:bg-blue-50 transition-all text-gray-400 hover:text-blue-600 group"
+      title="Root Library"
     >
-      <Home class="w-4 h-4" />
+      <Home class="w-4 h-4 group-hover:fill-blue-50" />
     </button>
-    
+
     <div v-for="seg in segments" :key="seg.path" class="flex items-center space-x-2 shrink-0">
-      <ChevronRight class="w-4 h-4 text-gray-400" />
+      <ChevronRight class="w-3.5 h-3.5 text-gray-300" />
       <button 
         @click="emit('navigate', seg.path)"
-        class="px-2 py-1 rounded hover:bg-gray-100 transition-colors text-gray-700 hover:text-blue-600 font-medium whitespace-nowrap"
+        class="px-2.5 py-1.5 rounded-md hover:bg-blue-50 transition-all text-gray-600 hover:text-blue-600 font-semibold whitespace-nowrap border border-transparent hover:border-blue-100"
       >
         {{ seg.name }}
       </button>

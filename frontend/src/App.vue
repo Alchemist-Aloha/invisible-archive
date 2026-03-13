@@ -1,26 +1,40 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { Search, Loader2 } from 'lucide-vue-next';
-import { fetchList, searchFiles } from './api';
+import { Search, Loader2, X, AlertCircle, ChevronLeft, Download, Info, FileText } from 'lucide-vue-next';
+import { fetchList, searchFiles, getRawUrl, fetchText, CAP_STREAM, CAP_RENDER, CAP_EDIT } from './api';
 import type { FileItem } from './api';
 import Breadcrumbs from './components/Breadcrumbs.vue';
 import FileGrid from './components/FileGrid.vue';
+import Plyr from 'plyr';
+import 'plyr/dist/plyr.css';
 
-const currentPath = ref('/library');
+const currentPath = ref('/');
 const searchQuery = ref('');
 const isSearching = ref(false);
+const previewItem = ref<FileItem | null>(null);
+const showInfo = ref(false);
+const videoElement = ref<HTMLVideoElement | null>(null);
+let player: Plyr | null = null;
 
-const { data: items, isLoading, refetch } = useQuery({
+const { data: items, isLoading, error, refetch } = useQuery({
   queryKey: ['files', currentPath],
   queryFn: () => fetchList(currentPath.value),
   enabled: !isSearching.value,
+  retry: 1,
 });
 
 const handleNavigate = (path: string) => {
   searchQuery.value = '';
   isSearching.value = false;
   currentPath.value = path;
+};
+
+const goBack = () => {
+  if (currentPath.value === '/') return;
+  const parts = currentPath.value.split('/');
+  parts.pop();
+  handleNavigate(parts.join('/') || '/');
 };
 
 const handleSearch = async () => {
@@ -30,64 +44,325 @@ const handleSearch = async () => {
     return;
   }
   isSearching.value = true;
-  // In a real app, useQuery would handle search too
 };
 
-const { data: searchResults } = useQuery({
+const { data: searchResults, isLoading: isSearchLoading } = useQuery({
   queryKey: ['search', searchQuery],
   queryFn: () => searchFiles(searchQuery.value),
   enabled: isSearching,
 });
 
 const displayItems = computed(() => isSearching.value ? searchResults.value : items.value);
+const showLoading = computed(() => isLoading.value || (isSearching.value && isSearchLoading.value));
+
+// Text Content Query
+const { data: textContent, isLoading: isTextLoading } = useQuery({
+  queryKey: ['text', computed(() => previewItem.value?.path)],
+  queryFn: () => fetchText(previewItem.value!.path),
+  enabled: computed(() => !!previewItem.value && (previewItem.value.capabilities & CAP_EDIT) !== 0),
+});
 
 const handlePreview = (item: FileItem) => {
-  console.log('Previewing:', item);
-  // Phase 3 Next: Implement Quick Look Modal
+  previewItem.value = item;
+  showInfo.value = false;
 };
+
+const closePreview = () => {
+  if (player) {
+    player.destroy();
+    player = null;
+  }
+  previewItem.value = null;
+};
+
+watch(previewItem, (newItem) => {
+  if (newItem && (newItem.capabilities & CAP_STREAM)) {
+    setTimeout(() => {
+      if (videoElement.value) {
+        player = new Plyr(videoElement.value, {
+          autoplay: true,
+          hideControls: true,
+        });
+      }
+    }, 100);
+  }
+});
+
+onMounted(() => {
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && previewItem.value) closePreview();
+    if (e.key === 'Backspace' && !previewItem.value && !isSearching.value) goBack();
+  });
+});
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-gray-50 overflow-hidden">
-    <!-- Header -->
-    <header class="flex items-center justify-between px-6 py-3 bg-white border-b border-gray-200">
-      <h1 class="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-        Invisible Archive
-      </h1>
+  <div class="flex flex-col h-screen bg-[#f8fafc] overflow-hidden text-slate-900 font-sans selection:bg-blue-100">
+    <!-- Modern Header -->
+    <header class="flex items-center justify-between px-4 sm:px-8 py-4 bg-white/80 backdrop-blur-xl border-b border-slate-200/60 sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+      <div class="flex items-center gap-2 sm:gap-4 shrink-0">
+        <div 
+          @click="handleNavigate('/')"
+          class="w-9 h-9 sm:w-10 sm:h-10 bg-gradient-to-tr from-blue-600 to-blue-500 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20 cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+        >
+          <div class="w-4 h-4 sm:w-5 sm:h-5 border-[2.5px] border-white rounded-[3px] rotate-45"></div>
+        </div>
+        <div class="hidden xs:block">
+          <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-800 leading-none">
+            Archive
+          </h1>
+          <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Invisible</p>
+        </div>
+      </div>
       
-      <div class="relative w-96">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div class="relative w-full max-w-lg mx-4 group">
+        <Search class="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
         <input 
           v-model="searchQuery"
           @keyup.enter="handleSearch"
           type="text" 
-          placeholder="Search files and archives..."
-          class="w-full pl-10 pr-4 py-2 bg-gray-100 border-transparent focus:bg-white focus:border-blue-500 focus:ring-0 rounded-full text-sm transition-all"
+          placeholder="Search items..."
+          class="w-full pl-10 pr-10 py-2.5 bg-slate-100 border border-transparent focus:bg-white focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 rounded-2xl text-sm transition-all outline-none placeholder:text-slate-400"
         >
+        <button 
+          v-if="searchQuery" 
+          @click="searchQuery = ''; handleSearch()"
+          class="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-slate-200 rounded-lg text-slate-400 transition-colors"
+        >
+          <X class="w-3.5 h-3.5" />
+        </button>
       </div>
       
-      <div class="w-20"></div> <!-- Spacer -->
+      <div class="flex items-center gap-3 shrink-0">
+        <div class="hidden sm:flex flex-col items-end">
+          <div class="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-[10px] font-bold text-green-600 rounded-full border border-green-100">
+            <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+            CONNECTED
+          </div>
+        </div>
+        <button class="sm:hidden p-2 hover:bg-slate-100 rounded-xl text-slate-500">
+          <Info class="w-5 h-5" />
+        </button>
+      </div>
     </header>
 
-    <!-- Navigation -->
-    <Breadcrumbs :path="currentPath" @navigate="handleNavigate" />
+    <!-- Contextual Actions Bar -->
+    <div class="flex items-center px-4 sm:px-8 py-2 bg-white border-b border-slate-200/60 z-20">
+      <button 
+        v-if="currentPath !== '/'"
+        @click="goBack"
+        class="mr-2 p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 transition-colors group"
+        title="Go Back"
+      >
+        <ChevronLeft class="w-5 h-5 group-active:-translate-x-1 transition-transform" />
+      </button>
+      <Breadcrumbs :path="currentPath" @navigate="handleNavigate" class="flex-1 border-none bg-transparent shadow-none px-0" />
+    </div>
 
-    <!-- Main Content -->
-    <main class="flex-1 relative">
-      <div v-if="isLoading" class="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-sm z-10">
-        <Loader2 class="w-8 h-8 text-blue-600 animate-spin" />
+    <!-- Main Content Area -->
+    <main class="flex-1 relative overflow-hidden flex flex-col">
+      <!-- State Transitions Overlay -->
+      <transition name="fade">
+        <div v-if="showLoading" class="absolute inset-0 flex items-center justify-center bg-white/40 backdrop-blur-[1px] z-10">
+          <div class="flex flex-col items-center gap-4 p-8 bg-white/80 rounded-3xl shadow-xl border border-white">
+            <div class="relative">
+              <div class="w-12 h-12 border-4 border-blue-100 rounded-full"></div>
+              <div class="w-12 h-12 border-4 border-t-blue-600 rounded-full animate-spin absolute top-0"></div>
+            </div>
+            <p class="text-xs font-bold text-slate-500 uppercase tracking-widest">Accessing VFS</p>
+          </div>
+        </div>
+      </transition>
+
+      <!-- Connection Error UI -->
+      <div v-if="error" class="flex-1 flex items-center justify-center p-6 bg-slate-50">
+        <div class="max-w-md w-full p-8 bg-white rounded-[32px] shadow-2xl shadow-slate-200/50 border border-slate-100 text-center transform transition-all duration-500 hover:scale-[1.01]">
+          <div class="w-20 h-20 bg-rose-50 rounded-3xl flex items-center justify-center mx-auto mb-6">
+            <AlertCircle class="w-10 h-10 text-rose-500" />
+          </div>
+          <h2 class="text-xl font-black text-slate-800 mb-3">Service Unavailable</h2>
+          <p class="text-slate-500 mb-8 text-sm leading-relaxed">The archive engine is currently unreachable. This might be due to a connection drop or server maintenance.</p>
+          <button @click="() => refetch()" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-full text-sm font-semibold transition-colors">
+            Retry Connection
+          </button>
+        </div>
       </div>
 
-      <FileGrid 
-        v-if="displayItems"
-        :items="displayItems" 
-        @navigate="handleNavigate"
-        @preview="handlePreview"
-      />
-      
-      <div v-else-if="!isLoading" class="flex flex-col items-center justify-center h-full text-gray-400">
-        <p class="text-lg font-medium">No items found</p>
+      <!-- Scrollable Content -->
+      <div class="flex-1 min-h-0 overflow-hidden">
+        <FileGrid 
+          v-if="displayItems && displayItems.length > 0"
+          :items="displayItems" 
+          @navigate="handleNavigate"
+          @preview="handlePreview"
+        />
+        
+        <!-- Empty State UI -->
+        <div v-else-if="!showLoading && !error" class="h-full flex flex-col items-center justify-center p-12 text-center">
+          <div class="w-32 h-32 bg-slate-100 rounded-[40px] flex items-center justify-center mb-8 relative">
+            <Search class="w-12 h-12 text-slate-300" />
+            <div class="absolute -bottom-2 -right-2 w-12 h-12 bg-white rounded-2xl shadow-sm flex items-center justify-center border border-slate-100">
+              <div class="w-6 h-1 bg-slate-200 rounded-full"></div>
+            </div>
+          </div>
+          <h3 class="text-lg font-bold text-slate-700 mb-2">No items found</h3>
+          <p class="text-slate-400 text-sm max-w-[240px] leading-relaxed">We couldn't find anything matching your request in this directory.</p>
+          <button 
+            @click="handleNavigate('/')"
+            class="mt-8 px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-xl text-xs font-bold hover:bg-slate-50 transition-colors"
+          >
+            Back to Library
+          </button>
+        </div>
       </div>
     </main>
+
+    <!-- Immersive Media Preview -->
+    <transition name="preview-zoom">
+      <div 
+        v-if="previewItem" 
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl"
+        @click="closePreview"
+      >
+        <div class="w-full h-full flex flex-col sm:p-6" @click.stop>
+          <!-- Preview Top Bar -->
+          <div class="flex items-center justify-between p-4 sm:px-2">
+            <div class="flex items-center gap-3 max-w-[60%] sm:max-w-[80%]">
+              <div class="p-2 bg-white/10 rounded-lg text-white">
+                <FileIcon :name="previewItem.name" :isDir="false" :capabilities="previewItem.capabilities" class="w-5 h-5" />
+              </div>
+              <div class="truncate">
+                <h4 class="text-white text-sm font-bold truncate">{{ previewItem.name }}</h4>
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">{{ (previewItem.size / 1024 / 1024).toFixed(2) }} MB</p>
+              </div>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <a 
+                :href="getRawUrl(previewItem.path)" 
+                download
+                class="hidden sm:flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                <Download class="w-4 h-4" />
+                Raw File
+              </a>
+              <button 
+                @click="closePreview"
+                class="p-2.5 bg-white/10 hover:bg-rose-500 text-white rounded-xl transition-all"
+              >
+                <X class="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Stage -->
+          <div class="flex-1 flex items-center justify-center p-2 sm:p-8 overflow-hidden">
+            <!-- Image Stage -->
+            <div v-if="previewItem.capabilities & CAP_RENDER" class="relative group max-w-full max-h-full">
+              <img 
+                :src="getRawUrl(previewItem.path)"
+                class="max-w-full max-h-full object-contain shadow-[0_32px_64px_rgba(0,0,0,0.5)] rounded-lg"
+              >
+            </div>
+
+            <!-- Video Stage -->
+            <div v-else-if="previewItem.capabilities & CAP_STREAM" class="w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video">
+              <video 
+                ref="videoElement"
+                playsinline 
+                controls
+                class="w-full h-full"
+              >
+                <source :src="getRawUrl(previewItem.path)" type="video/mp4" />
+              </video>
+            </div>
+
+            <!-- Text Stage -->
+            <div v-else-if="previewItem.capabilities & CAP_EDIT" class="w-full max-w-5xl h-full bg-slate-900 rounded-2xl border border-white/10 overflow-hidden flex flex-col shadow-2xl">
+              <div class="px-4 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <FileText class="w-4 h-4 text-slate-400" />
+                  <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Document Preview</span>
+                </div>
+                <div v-if="isTextLoading" class="flex items-center gap-2">
+                  <Loader2 class="w-3 h-3 text-blue-500 animate-spin" />
+                  <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Loading content...</span>
+                </div>
+              </div>
+              <div class="flex-1 overflow-auto p-6 sm:p-10 font-mono text-sm leading-relaxed text-slate-300 selection:bg-blue-500/30">
+                <pre v-if="textContent" class="whitespace-pre-wrap break-all">{{ textContent }}</pre>
+                <div v-else-if="isTextLoading" class="h-full flex items-center justify-center">
+                  <div class="space-y-4 w-full max-w-md">
+                    <div class="h-4 bg-white/5 rounded-full w-3/4 animate-pulse"></div>
+                    <div class="h-4 bg-white/5 rounded-full w-full animate-pulse"></div>
+                    <div class="h-4 bg-white/5 rounded-full w-5/6 animate-pulse"></div>
+                    <div class="h-4 bg-white/5 rounded-full w-2/3 animate-pulse"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Fallback Stage -->
+            <div v-else class="p-12 bg-white/5 rounded-3xl border border-white/10 text-center max-w-sm">
+              <div class="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <AlertCircle class="w-10 h-10 text-slate-400" />
+              </div>
+              <h3 class="text-white font-bold text-lg mb-2">No Preview</h3>
+              <p class="text-slate-400 text-xs mb-8 leading-relaxed">This file type requires external software to view. You can download the raw data below.</p>
+              <a 
+                :href="getRawUrl(previewItem.path)" 
+                class="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
+              >
+                Download Data
+              </a>
+            </div>
+          </div>
+
+          <!-- Mobile Actions -->
+          <div class="sm:hidden p-4 grid grid-cols-1 gap-3">
+            <a 
+              :href="getRawUrl(previewItem.path)" 
+              download
+              class="flex items-center justify-center gap-2 py-4 bg-white/10 text-white rounded-2xl text-sm font-bold"
+            >
+              <Download class="w-5 h-5" />
+              Download
+            </a>
+          </div>
+        </div>
+      </div>
+    </transition>
   </div>
 </template>
+
+<style>
+.fade-enter-active, .fade-leave-active { transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.preview-zoom-enter-active, .preview-zoom-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.preview-zoom-enter-from { opacity: 0; transform: scale(0.95); }
+.preview-zoom-leave-to { opacity: 0; transform: scale(1.05); }
+
+/* Custom Font Utilities */
+@supports (font-variation-settings: normal) {
+  :root { font-family: 'Inter var', sans-serif; }
+}
+
+/* Plyr Theming */
+:root {
+  --plyr-color-main: #2563eb;
+  --plyr-video-background: transparent;
+  --plyr-border-radius: 16px;
+}
+
+.plyr--video {
+  height: 100%;
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+xs\:block {
+  @media (min-width: 480px) { display: block; }
+}
+</style>

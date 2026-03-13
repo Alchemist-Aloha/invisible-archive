@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"path/filepath"
+	"path"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/likun/invisible-archive/internal/vfs"
@@ -29,25 +29,25 @@ func NewHandler(vfs *vfs.Manager) *Handler {
 }
 
 func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
-	path := r.URL.Query().Get("path")
-	if path == "" {
-		path = "."
+	requestPath := r.URL.Query().Get("path")
+	if requestPath == "" || requestPath == "." {
+		requestPath = "/"
 	}
-	log.Printf("API: Listing path: %s", path)
+	log.Printf("API: Listing path: %s", requestPath)
 
-	files, err := h.vfs.ReadDir(path)
+	files, err := h.vfs.ReadDir(requestPath)
 	if err != nil {
-		log.Printf("API: Error listing path %s: %v", path, err)
+		log.Printf("API: Error listing path %s: %v", requestPath, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("API: Found %d items in %s", len(files), path)
+	log.Printf("API: Found %d items in %s", len(files), requestPath)
 
 	items := make([]FileItem, 0, len(files))
 	for _, f := range files {
 		items = append(items, FileItem{
 			Name:         f.Name(),
-			Path:         filepath.Join(path, f.Name()),
+			Path:         path.Join(requestPath, f.Name()),
 			IsDir:        f.IsDir(),
 			Size:         f.Size(),
 			ModTime:      f.ModTime().Unix(),
@@ -60,21 +60,23 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) Raw(w http.ResponseWriter, r *http.Request) {
-	path := chi.URLParam(r, "*")
-	if path == "" {
-		path = r.URL.Query().Get("path")
+	pathParam := chi.URLParam(r, "*")
+	if pathParam == "" {
+		pathParam = r.URL.Query().Get("path")
 	}
 
-	reader, closer, err := h.vfs.GetRawReader(path)
+	reader, closer, err := h.vfs.GetRawReader(pathParam)
 	if err != nil {
+		log.Printf("API: Failed to get reader for %s: %v", pathParam, err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
 	defer closer.Close()
 
 	// Use Stat to get size and modtime for ServeContent
-	stat, err := h.vfs.Stat(path)
+	stat, err := h.vfs.Stat(pathParam)
 	if err != nil {
+		log.Printf("API: Failed to stat %s: %v", pathParam, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

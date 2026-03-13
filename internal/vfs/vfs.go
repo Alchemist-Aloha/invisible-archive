@@ -2,6 +2,7 @@ package vfs
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -218,7 +219,17 @@ func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
 				ca.Close()
 				return nil, nil, err
 			}
-			return &zipReadSeeker{rc: rc, ca: ca}, &zipReadSeeker{rc: rc, ca: ca}, nil
+			defer rc.Close()
+
+			// Buffer ZIP entry to support seeking (needed for ServeContent)
+			b, err := io.ReadAll(rc)
+			if err != nil {
+				ca.Close()
+				return nil, nil, err
+			}
+			rs := bytes.NewReader(b)
+
+			return &zipReadSeeker{rs: rs, ca: ca}, &zipReadSeeker{rs: rs, ca: ca}, nil
 		}
 	}
 
@@ -227,18 +238,17 @@ func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
 }
 
 type zipReadSeeker struct {
-	rc io.ReadCloser
+	rs io.ReadSeeker
 	ca *CachedArchive
 }
 
-func (z *zipReadSeeker) Read(p []byte) (n int, err error) { return z.rc.Read(p) }
+func (z *zipReadSeeker) Read(p []byte) (n int, err error) { return z.rs.Read(p) }
 func (z *zipReadSeeker) Close() error {
-	err := z.rc.Close()
 	z.ca.Close()
-	return err
+	return nil
 }
 func (z *zipReadSeeker) Seek(offset int64, whence int) (int64, error) {
-	return 0, fmt.Errorf("seek not supported in ZIP entries")
+	return z.rs.Seek(offset, whence)
 }
 
 type zipFile struct {

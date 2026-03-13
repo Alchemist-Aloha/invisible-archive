@@ -19,10 +19,10 @@ const isZip = props.name.toLowerCase().endsWith('.zip');
 </script>
 
 <template>
-  <Folder v-if="props.isDir" class="w-10 h-10 text-blue-500 fill-current" />
-  <FileArchive v-else-if="isZip" class="w-10 h-10 text-amber-500 fill-current" />
-  <FileVideo v-else-if="props.capabilities & CAP_STREAM" class="w-10 h-10 text-purple-500" />
-  <FileImage v-else-if="props.capabilities & CAP_RENDER" class="w-10 h-10 text-rose-500" />
-  <FileCode v-else-if="props.capabilities & CAP_EDIT" class="w-10 h-10 text-emerald-500" />
-  <FileGeneric v-else class="w-10 h-10 text-gray-400" />
+  <Folder v-if="props.isDir" class="w-full h-full text-blue-500 fill-blue-500/10 transition-colors" />
+  <FileArchive v-else-if="isZip" class="w-full h-full text-amber-500 fill-amber-500/10 transition-colors" />
+  <FileVideo v-else-if="props.capabilities & CAP_STREAM" class="w-full h-full text-indigo-500 fill-indigo-500/10 transition-colors" />
+  <FileImage v-else-if="props.capabilities & CAP_RENDER" class="w-full h-full text-rose-500 fill-rose-500/10 transition-colors" />
+  <FileCode v-else-if="props.capabilities & CAP_EDIT" class="w-full h-full text-emerald-500 fill-emerald-500/10 transition-colors" />
+  <FileGeneric v-else class="w-full h-full text-slate-400 fill-slate-400/5 transition-colors" />
 </template>

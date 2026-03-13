@@ -36,4 +36,9 @@ export const getThumbUrl = (path: string) => {
   return `${api.defaults.baseURL}/thumb?path=${encodeURIComponent(path)}`;
 };
 
+export const fetchText = async (path: string): Promise<string> => {
+  const { data } = await api.get<string>(`/raw/${path}`, { responseType: 'text' });
+  return data;
+};
+
 export default api;

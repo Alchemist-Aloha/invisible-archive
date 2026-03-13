@@ -36,11 +36,16 @@ func NewIndexer(dbPath, library string) (*Indexer, error) {
 		return nil, err
 	}
 
+	absLib, err := filepath.Abs(library)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Indexer{
 		db:      db,
 		queries: New(db),
 		watcher: watcher,
-		library: filepath.Clean(library),
+		library: absLib,
 	}, nil
 }
 
@@ -60,8 +65,12 @@ func (idx *Indexer) IndexDirectory(ctx context.Context, physicalPath string) err
 		return err
 	}
 
-	// Calculate paths relative to system root for VFS consistency
-	relParent, _ := filepath.Rel("/", physicalPath)
+	// Calculate paths relative to library root
+	absPhysical, _ := filepath.Abs(physicalPath)
+	relParent, err := filepath.Rel(idx.library, absPhysical)
+	if err != nil {
+		return err
+	}
 	if relParent == "." {
 		relParent = ""
 	}

@@ -3,6 +3,10 @@ package api
 import (
 	"crypto/md5"
 	"fmt"
+	_ "image/gif"
+	_ "image/jpeg"
+	_ "image/png"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,6 +14,7 @@ import (
 
 	"github.com/disintegration/imaging"
 	"github.com/likun/invisible-archive/internal/vfs"
+	_ "golang.org/x/image/webp"
 )
 
 type Thumbnailer struct {
@@ -42,6 +47,7 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 
 	stat, err := t.vfs.Stat(path)
 	if err != nil {
+		log.Printf("THUMB: File not found: %s, err: %v", path, err)
 		http.Error(w, "file not found", http.StatusNotFound)
 		return
 	}
@@ -49,13 +55,15 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 	// Fast Identity Cache Key
 	id := fmt.Sprintf("%s-%d-%d", path, stat.Size(), stat.ModTime().Unix())
 	hash := fmt.Sprintf("%x", md5.Sum([]byte(id)))
-	thumbPath := filepath.Join(t.cacheDir, hash+".webp")
+	thumbPath := filepath.Join(t.cacheDir, hash+".jpg")
 
 	// Check cache
 	if _, err := os.Stat(thumbPath); err == nil {
 		http.ServeFile(w, r, thumbPath)
 		return
 	}
+
+	log.Printf("THUMB: Generating for %s", path)
 
 	// Throttle and generate
 	t.concurSem <- struct{}{}
@@ -70,6 +78,7 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 	// Generate
 	reader, closer, err := t.vfs.GetRawReader(path)
 	if err != nil {
+		log.Printf("THUMB: Failed to get reader for %s: %v", path, err)
 		http.Error(w, "failed to read file", http.StatusInternalServerError)
 		return
 	}
@@ -77,6 +86,7 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 
 	src, err := imaging.Decode(reader)
 	if err != nil {
+		log.Printf("THUMB: Failed to decode image %s: %v", path, err)
 		http.Error(w, "failed to decode image", http.StatusInternalServerError)
 		return
 	}
@@ -84,11 +94,13 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 	// Resize to 200px width, preserving aspect ratio
 	dst := imaging.Resize(src, 200, 0, imaging.Lanczos)
 
-	// Save to cache
+	// Save to cache (imaging.Save detects format from .jpg extension)
 	if err := imaging.Save(dst, thumbPath); err != nil {
+		log.Printf("THUMB: Failed to save thumbnail for %s: %v", path, err)
 		http.Error(w, "failed to save thumbnail", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("THUMB: Success for %s -> %s", path, thumbPath)
 	http.ServeFile(w, r, thumbPath)
 }
