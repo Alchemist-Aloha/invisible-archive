@@ -47,3 +47,5 @@ thumbs/
 .docker
 server.log
 test_library/test_video.mp4
+test_library/test_m4v.m4v
+test_library/test_mp4.mp4

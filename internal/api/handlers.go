@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"net/url"
 	"path"
 	"path/filepath"
 
@@ -66,6 +67,12 @@ func (h *Handler) Raw(w http.ResponseWriter, r *http.Request) {
 	pathParam := chi.URLParam(r, "*")
 	if pathParam == "" {
 		pathParam = r.URL.Query().Get("path")
+	}
+
+	// URL-decode the path parameter
+	decodedPath, err := url.PathUnescape(pathParam)
+	if err == nil {
+		pathParam = decodedPath
 	}
 
 	reader, closer, err := h.vfs.GetRawReader(pathParam)
