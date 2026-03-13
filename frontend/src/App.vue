@@ -27,7 +27,32 @@ const previewItem = ref<FileItem | null>(null);
 const showInfo = ref(false);
 const videoElement = ref<HTMLVideoElement | null>(null);
 const previewStage = ref<HTMLElement | null>(null);
+const transitionName = ref('slide-next');
 let player: Plyr | null = null;
+
+// Preload Engine: Fetch upcoming images in the background
+watch(previewItem, (item) => {
+  if (!item || !displayItems.value) return;
+  
+  const list = displayItems.value;
+  const currentIndex = list.findIndex(i => i.path === item.path);
+  if (currentIndex === -1) return;
+
+  // Preload next 2 and previous 1 images
+  const indicesToPreload = [
+    (currentIndex + 1) % list.length,
+    (currentIndex + 2) % list.length,
+    (currentIndex - 1 + list.length) % list.length
+  ];
+
+  indicesToPreload.forEach(idx => {
+    const nextItem = list[idx];
+    if (nextItem && (nextItem.capabilities & CAP_RENDER)) {
+      const img = new Image();
+      img.src = getRawUrl(nextItem.path);
+    }
+  });
+});
 
 // Swipe navigation
 useSwipe(previewStage, {
@@ -98,6 +123,8 @@ const closePreview = () => {
 // Navigation logic for preview
 const navigatePreview = (direction: 'prev' | 'next') => {
   if (!previewItem.value || !displayItems.value) return;
+  
+  transitionName.value = direction === 'next' ? 'slide-next' : 'slide-prev';
   
   const list = displayItems.value;
   const currentIndex = list.findIndex(item => item.path === previewItem.value!.path);
@@ -333,67 +360,68 @@ onUnmounted(() => {
           </div>
 
           <!-- Main Stage -->
-          <div ref="previewStage" class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-            <!-- Image Stage -->
-            <div v-if="previewItem.capabilities & CAP_RENDER" class="w-full h-full flex items-center justify-center">
-              <img 
-                :key="previewItem.path"
-                :src="getRawUrl(previewItem.path)"
-                class="max-w-full max-h-full object-contain shadow-[0_32px_64px_rgba(0,0,0,0.5)] rounded-sm transition-opacity duration-300"
-              >
-            </div>
-
-            <!-- Video Stage -->
-            <div v-else-if="previewItem.capabilities & CAP_STREAM" class="w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video">
-              <video 
-                ref="videoElement"
-                playsinline 
-                controls
-                class="w-full h-full"
-              >
-                <source :src="getRawUrl(previewItem.path)" type="video/mp4" />
-              </video>
-            </div>
-
-            <!-- Text Stage -->
-            <div v-else-if="previewItem.capabilities & CAP_EDIT" class="w-full max-w-5xl h-full bg-slate-900 rounded-2xl border border-white/10 overflow-hidden flex flex-col shadow-2xl">
-              <div class="px-4 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <FileText class="w-4 h-4 text-slate-400" />
-                  <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Document Preview</span>
-                </div>
-                <div v-if="isTextLoading" class="flex items-center gap-2">
-                  <Loader2 class="w-3 h-3 text-blue-500 animate-spin" />
-                  <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Loading content...</span>
-                </div>
+          <div ref="previewStage" class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+            <Transition :name="transitionName" mode="out-in">
+              <!-- Image Stage -->
+              <div v-if="previewItem.capabilities & CAP_RENDER" :key="previewItem.path" class="w-full h-full flex items-center justify-center">
+                <img 
+                  :src="getRawUrl(previewItem.path)"
+                  class="max-w-full max-h-full object-contain shadow-[0_32px_64px_rgba(0,0,0,0.5)] rounded-sm transition-opacity duration-300"
+                >
               </div>
-              <div class="flex-1 overflow-auto p-6 sm:p-10 font-mono text-sm leading-relaxed text-slate-300 selection:bg-blue-500/30">
-                <pre v-if="textContent" class="whitespace-pre-wrap break-all text-left">{{ textContent }}</pre>
-                <div v-else-if="isTextLoading" class="h-full flex items-center justify-center">
-                  <div class="space-y-4 w-full max-w-md">
-                    <div class="h-4 bg-white/5 rounded-full w-3/4 animate-pulse"></div>
-                    <div class="h-4 bg-white/5 rounded-full w-full animate-pulse"></div>
-                    <div class="h-4 bg-white/5 rounded-full w-5/6 animate-pulse"></div>
-                    <div class="h-4 bg-white/5 rounded-full w-2/3 animate-pulse"></div>
+
+              <!-- Video Stage -->
+              <div v-else-if="previewItem.capabilities & CAP_STREAM" :key="previewItem.path + '-v'" class="w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video">
+                <video 
+                  ref="videoElement"
+                  playsinline 
+                  controls
+                  class="w-full h-full"
+                >
+                  <source :src="getRawUrl(previewItem.path)" type="video/mp4" />
+                </video>
+              </div>
+
+              <!-- Text Stage -->
+              <div v-else-if="previewItem.capabilities & CAP_EDIT" :key="previewItem.path + '-t'" class="w-full max-w-5xl h-full bg-slate-900 rounded-2xl border border-white/10 overflow-hidden flex flex-col shadow-2xl">
+                <div class="px-4 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <FileText class="w-4 h-4 text-slate-400" />
+                    <span class="text-xs font-bold text-slate-300 uppercase tracking-widest">Document Preview</span>
+                  </div>
+                  <div v-if="isTextLoading" class="flex items-center gap-2">
+                    <Loader2 class="w-3 h-3 text-blue-500 animate-spin" />
+                    <span class="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Loading content...</span>
+                  </div>
+                </div>
+                <div class="flex-1 overflow-auto p-6 sm:p-10 font-mono text-sm leading-relaxed text-slate-300 selection:bg-blue-500/30">
+                  <pre v-if="textContent" class="whitespace-pre-wrap break-all text-left">{{ textContent }}</pre>
+                  <div v-else-if="isTextLoading" class="h-full flex items-center justify-center">
+                    <div class="space-y-4 w-full max-w-md">
+                      <div class="h-4 bg-white/5 rounded-full w-3/4 animate-pulse"></div>
+                      <div class="h-4 bg-white/5 rounded-full w-full animate-pulse"></div>
+                      <div class="h-4 bg-white/5 rounded-full w-5/6 animate-pulse"></div>
+                      <div class="h-4 bg-white/5 rounded-full w-2/3 animate-pulse"></div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <!-- Fallback Stage -->
-            <div v-else class="p-12 bg-white/5 rounded-3xl border border-white/10 text-center max-w-sm">
-              <div class="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <AlertCircle class="w-10 h-10 text-slate-400" />
+              <!-- Fallback Stage -->
+              <div v-else :key="'fallback'" class="p-12 bg-white/5 rounded-3xl border border-white/10 text-center max-w-sm">
+                <div class="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <AlertCircle class="w-10 h-10 text-slate-400" />
+                </div>
+                <h3 class="text-white font-bold text-lg mb-2">No Preview</h3>
+                <p class="text-slate-400 text-xs mb-8 leading-relaxed">This file type requires external software to view. You can download the raw data below.</p>
+                <a 
+                  :href="getRawUrl(previewItem.path)" 
+                  class="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
+                >
+                  Download Data
+                </a>
               </div>
-              <h3 class="text-white font-bold text-lg mb-2">No Preview</h3>
-              <p class="text-slate-400 text-xs mb-8 leading-relaxed">This file type requires external software to view. You can download the raw data below.</p>
-              <a 
-                :href="getRawUrl(previewItem.path)" 
-                class="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
-              >
-                Download Data
-              </a>
-            </div>
+            </Transition>
           </div>
 
           <!-- Mobile Actions -->
@@ -434,6 +462,18 @@ onUnmounted(() => {
 .preview-zoom-enter-active, .preview-zoom-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
 .preview-zoom-enter-from { opacity: 0; transform: scale(0.95); }
 .preview-zoom-leave-to { opacity: 0; transform: scale(1.05); }
+
+/* Slide Transitions */
+.slide-next-enter-active, .slide-next-leave-active,
+.slide-prev-enter-active, .slide-prev-leave-active {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.slide-next-enter-from { opacity: 0; transform: translateX(30px); }
+.slide-next-leave-to { opacity: 0; transform: translateX(-30px); }
+
+.slide-prev-enter-from { opacity: 0; transform: translateX(-30px); }
+.slide-prev-leave-to { opacity: 0; transform: translateX(30px); }
 
 /* Custom Font Utilities */
 @supports (font-variation-settings: normal) {

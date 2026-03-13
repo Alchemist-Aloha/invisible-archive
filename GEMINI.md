@@ -10,19 +10,26 @@
 ---
 
 ## 2. Technical Stack
-*   **Backend:** Go (Golang)
-    *   `afero`: Unified VFS abstraction.
-    *   `hashicorp/golang-lru/v2`: LRU cache for Mount Table.
-    *   `archive/zip`: Standard library for ZIP handling.
-    *   `modernc.org/sqlite`: CGO-free SQLite.
-    *   `govips/libvips`: High-performance image engine.
-    *   `Chi`: Minimalist, standard-compatible HTTP router.
+*   **Backend:** Go (Golang) 1.24+
+    *   `afero`: Unified VFS abstraction for transparent archive/OS path handling.
+    *   `hashicorp/golang-lru/v2`: LRU cache for Mount Table resource management.
+    *   `archive/zip`: Standard library for high-performance ZIP handling.
+    *   `modernc.org/sqlite`: CGO-free SQLite for portable metadata indexing.
+    *   `disintegration/imaging`: Pure Go image processing for thumbnails (replaced libvips for zero-dependency build).
+    *   `Chi (v5)`: Minimalist, standard-compatible HTTP router.
+    *   `fsnotify`: Active directory watching for real-time library updates.
+    *   `sqlc`: Type-safe Go code generation from SQL schemas and queries.
 *   **Frontend:** Vue 3 (Vite)
-    *   `Tailwind CSS` + `Shadcn/Vue`: UI components.
-    *   `TanStack Query`: Server-state management.
-    *   `TanStack Virtual`: High-performance virtual scrolling.
-    *   `Plyr.io`: Video player.
+    *   `Tailwind CSS v4`: Modern utility-first styling.
+    *   `TanStack Vue Query`: Robust server-state management and caching.
+    *   `TanStack Vue Virtual`: Efficient rendering of large file lists (100k+ items).
+    *   `VueUse`: Swipe navigation gestures for mobile devices (`useSwipe`).
+    *   `Vite Plugin PWA`: Mobile installability and Service Worker management.
+    *   `Plyr`: Modern, accessible video player integration.
+    *   `Lucide Vue Next`: Clean and consistent icon set.
 *   **Deployment:** Docker (Multi-stage build).
+    *   Alpine-based runtime for minimal image footprint.
+    *   Optimized build context via `.dockerignore`.
 
 ---
 
