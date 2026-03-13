@@ -18,49 +18,49 @@ func TestPeelPath(t *testing.T) {
 	// tmpDir/folder/
 	// tmpDir/folder/archive.zip
 	// tmpDir/direct.zip
-	
+
 	folderPath := filepath.Join(tmpDir, "folder")
 	os.Mkdir(folderPath, 0755)
-	
+
 	archivePath := filepath.Join(folderPath, "archive.zip")
 	os.WriteFile(archivePath, []byte("fake zip content"), 0644)
-	
+
 	directZipPath := filepath.Join(tmpDir, "direct.zip")
 	os.WriteFile(directZipPath, []byte("fake zip content"), 0644)
 
 	tests := []struct {
-		name         string
-		requestPath  string
-		wantPhysical string
-		wantVirtual  string
+		name          string
+		requestPath   string
+		wantPhysical  string
+		wantVirtual   string
 		wantIsArchive bool
 	}{
 		{
-			name:         "Real directory",
-			requestPath:  "folder",
-			wantPhysical: folderPath,
-			wantVirtual:  "",
+			name:          "Real directory",
+			requestPath:   "folder",
+			wantPhysical:  folderPath,
+			wantVirtual:   "",
 			wantIsArchive: false,
 		},
 		{
-			name:         "Real archive",
-			requestPath:  "folder/archive.zip",
-			wantPhysical: archivePath,
-			wantVirtual:  "",
+			name:          "Real archive",
+			requestPath:   "folder/archive.zip",
+			wantPhysical:  archivePath,
+			wantVirtual:   "",
 			wantIsArchive: true,
 		},
 		{
-			name:         "Path inside archive",
-			requestPath:  "folder/archive.zip/images/cat.jpg",
-			wantPhysical: archivePath,
-			wantVirtual:  filepath.Join("images", "cat.jpg"),
+			name:          "Path inside archive",
+			requestPath:   "folder/archive.zip/images/cat.jpg",
+			wantPhysical:  archivePath,
+			wantVirtual:   filepath.Join("images", "cat.jpg"),
 			wantIsArchive: true,
 		},
 		{
-			name:         "Deep path inside archive",
-			requestPath:  "direct.zip/a/b/c/d.txt",
-			wantPhysical: directZipPath,
-			wantVirtual:  filepath.Join("a", "b", "c", "d.txt"),
+			name:          "Deep path inside archive",
+			requestPath:   "direct.zip/a/b/c/d.txt",
+			wantPhysical:  directZipPath,
+			wantVirtual:   filepath.Join("a", "b", "c", "d.txt"),
 			wantIsArchive: true,
 		},
 	}

@@ -19,7 +19,7 @@ type PathResult struct {
 func PeelPath(basePath, requestPath string) (*PathResult, error) {
 	fullPath := filepath.Join(basePath, filepath.Clean("/"+requestPath))
 	log.Printf("VFS: Peeling path. Base: %s, Request: %s, Full: %s", basePath, requestPath, fullPath)
-	
+
 	// We start from the longest path and peel back segments
 	current := fullPath
 	var virtualSegments []string
@@ -30,7 +30,7 @@ func PeelPath(basePath, requestPath string) (*PathResult, error) {
 			// Found a physical match
 			ext := strings.ToLower(filepath.Ext(current))
 			isZip := !info.IsDir() && ext == ".zip"
-			
+
 			res := &PathResult{
 				PhysicalPath: current,
 				VirtualPath:  "/" + filepath.Join(virtualSegments...),
@@ -46,7 +46,7 @@ func PeelPath(basePath, requestPath string) (*PathResult, error) {
 			// Reached root without finding a match
 			break
 		}
-		
+
 		virtualSegments = append([]string{filepath.Base(current)}, virtualSegments...)
 		current = parent
 	}
