@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/likun/invisible-archive/pkg/util"
 	_ "modernc.org/sqlite"
 )
 
@@ -72,14 +73,9 @@ func (idx *Indexer) IndexDirectory(ctx context.Context, physicalPath string) err
 		}
 
 		relPath := "/" + filepath.Join(relParent, entry.Name())
-		isZip := !info.IsDir() && strings.ToLower(filepath.Ext(entry.Name())) == ".zip"
 		
-		// Use a simple bitmask for capabilities
-		var caps int64 = 0
-		if info.IsDir() || isZip {
-			caps |= 1 // can_browse
-		}
-		// ... (rest of logic for other capabilities should be here or handled in API)
+		// Use shared capability logic
+		caps := int64(util.GetCapabilities(entry.Name(), info.IsDir()))
 
 		err = idx.queries.UpsertItem(ctx, UpsertItemParams{
 			ParentPath:  "/" + relParent,
@@ -147,10 +143,7 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 		fullPath := "/" + filepath.Join(relZipPath, f.Name)
 		isDir := f.FileInfo().IsDir()
 
-		var caps int64 = 0
-		if isDir || strings.HasSuffix(strings.ToLower(name), ".zip") {
-			caps |= 1 // can_browse
-		}
+		caps := int64(util.GetCapabilities(name, isDir))
 
 		err = idx.queries.UpsertItem(ctx, UpsertItemParams{
 			ParentPath:  parentPath,

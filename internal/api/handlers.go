@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/likun/invisible-archive/internal/vfs"
+	"github.com/likun/invisible-archive/pkg/util"
 )
 
 type FileItem struct {
@@ -20,13 +19,6 @@ type FileItem struct {
 	ModTime      int64  `json:"mod_time"`
 	Capabilities uint32 `json:"capabilities"`
 }
-
-const (
-	CapBrowse uint32 = 1 << iota // 1
-	CapStream                    // 2
-	CapRender                    // 4
-	CapEdit                      // 8
-)
 
 type Handler struct {
 	vfs *vfs.Manager
@@ -59,7 +51,7 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 			IsDir:        f.IsDir(),
 			Size:         f.Size(),
 			ModTime:      f.ModTime().Unix(),
-			Capabilities: getCapabilities(f),
+			Capabilities: util.GetCapabilities(f.Name(), f.IsDir()),
 		})
 	}
 
@@ -118,25 +110,4 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
-}
-
-func getCapabilities(f os.FileInfo) uint32 {
-	var caps uint32
-	name := strings.ToLower(f.Name())
-
-	if f.IsDir() || strings.HasSuffix(name, ".zip") {
-		caps |= CapBrowse
-	}
-
-	ext := filepath.Ext(name)
-	switch ext {
-	case ".mp4", ".mkv", ".webm", ".mp3", ".wav":
-		caps |= CapStream
-	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf":
-		caps |= CapRender
-	case ".txt", ".md", ".go", ".js", ".ts", ".vue", ".css", ".json", ".py", ".cpp", ".h":
-		caps |= CapEdit
-	}
-
-	return caps
 }
