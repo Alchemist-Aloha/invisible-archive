@@ -53,27 +53,45 @@ const lightbox = ref<PhotoSwipeLightbox | null>(null);
 const isSeeking = ref(false);
 const seekDelta = ref(0);
 const initialSeekTime = ref(0);
+const shouldIgnoreSwipe = ref(false);
 
 // Swipe navigation and Video Seek
 const { distanceX, isSwiping } = usePointerSwipe(previewStage, {
-  onSwipeStart() {
-    if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM)) {
-      isSeeking.value = true;
-      initialSeekTime.value = player?.currentTime || 0;
+  onSwipeStart(e) {
+    // Ignore if clicking on player controls
+    if ((e.target as HTMLElement)?.closest('.plyr__controls')) {
+      shouldIgnoreSwipe.value = true;
+      return;
     }
+    shouldIgnoreSwipe.value = false;
   },
   onSwipe() {
-    if (isSeeking.value && player) {
-      // 90 seconds per screen width
-      const scrubAmount = Math.min(player.duration, 90);
-      const deltaX = -distanceX.value; // distanceX is positive when swiping left
-      seekDelta.value = (deltaX / window.innerWidth) * scrubAmount;
-      
-      let newTime = initialSeekTime.value + seekDelta.value;
-      player.currentTime = Math.max(0, Math.min(newTime, player.duration));
+    if (shouldIgnoreSwipe.value) return;
+
+    if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM) && player) {
+      // Threshold: 10px movement to start seeking
+      if (!isSeeking.value && Math.abs(distanceX.value) > 10) {
+        isSeeking.value = true;
+        initialSeekTime.value = player.currentTime;
+      }
+
+      if (isSeeking.value) {
+        // 90 seconds per screen width
+        const scrubAmount = Math.min(player.duration, 90);
+        const deltaX = -distanceX.value; // distanceX is positive when swiping left
+        seekDelta.value = (deltaX / window.innerWidth) * scrubAmount;
+        
+        let newTime = initialSeekTime.value + seekDelta.value;
+        player.currentTime = Math.max(0, Math.min(newTime, player.duration));
+      }
     }
   },
   onSwipeEnd(_e, direction) {
+    if (shouldIgnoreSwipe.value) {
+      shouldIgnoreSwipe.value = false;
+      return;
+    }
+
     if (isSeeking.value) {
       isSeeking.value = false;
       seekDelta.value = 0;
@@ -664,7 +682,11 @@ onUnmounted(() => {
           </div>
 
           <!-- Main Stage -->
-          <div ref="previewStage" class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden relative">
+          <div 
+            ref="previewStage" 
+            class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden relative"
+            :class="{ 'touch-none': previewItem?.capabilities & CAP_STREAM }"
+          >
             <Transition :name="transitionName" mode="out-in">
               <!-- Image Stage -->
               <div v-if="previewItem.capabilities & CAP_RENDER" :key="previewItem.path" class="w-full h-full flex items-center justify-center">

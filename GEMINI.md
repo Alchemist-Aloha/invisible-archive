@@ -1,98 +1,166 @@
-# Project Plan: Invisible Archive
+# Invisible Archive Agent Guide
 
-## 1. Core Philosophy & Design Principles
-*   **Zero-Copy Streaming:** Never load full files into RAM. Use `io.Pipe` and `io.Copy` to move bytes from disk/archive directly to the HTTP response.
-*   **Path Transparency:** The UI and API should treat `/path/to/archive.zip/folder/image.jpg` exactly like a standard file system path.
-*   **NAS-Friendly Indexing:** Use a single SQLite file (WAL mode) to store the directory structure. Indexing is lazy and opportunistic to minimize IO.
-*   **On-Demand Processing:** Generate thumbnails only when a file enters the viewport.
-*   **Reference-Counted Resource Management:** Implement a Mount Table using an LRU cache. Open archives remain open as long as a stream is active, ensuring stability for media sessions.
-*   **Seamless Navigation:** Deeply nested structures and single-folder archives are automatically "flattened" or "auto-entered" to reduce redundant clicks.
+This document is for AI coding agents working on this repository.
 
----
+## Project Goal
 
-## 2. Technical Stack
-*   **Backend:** Go (Golang) 1.24+
-    *   `afero`: Unified VFS abstraction for transparent archive/OS path handling.
-    *   `hashicorp/golang-lru/v2`: LRU cache for Mount Table resource management.
-    *   `archive/zip`: Standard library for high-performance ZIP handling.
-    *   `modernc.org/sqlite`: CGO-free SQLite for portable metadata indexing.
-    *   `disintegration/imaging`: Pure Go image processing for thumbnails (replaced libvips for zero-dependency build).
-    *   `Chi (v5)`: Minimalist, standard-compatible HTTP router with URL decoding for special character support.
-    *   `fsnotify`: Active directory watching for real-time library updates.
-    *   `sqlc`: Type-safe Go code generation from SQL schemas and queries.
-*   **Frontend:** Vue 3 (Vite)
-    *   `Tailwind CSS v4`: Modern utility-first styling with custom dark mode variants.
-    *   `TanStack Vue Query`: Robust server-state management and caching.
-    *   `TanStack Vue Virtual`: Efficient rendering of large file lists (100k+ items).
-    *   `VueUse`: Swipe navigation gestures for mobile devices (`useSwipe`).
-    *   `Vite Plugin PWA`: Full mobile installability with generated manifest and multi-size PNG icons.
-    *   `PhotoSwipe v5`: High-performance image viewer with pinch-zoom and 1:1 touch tracking.
-    *   `Plyr`: Modern, accessible video player with mobile-optimized control layout.
-    *   `Lucide Vue Next`: Clean and consistent icon set.
-*   **Deployment:** Docker (Multi-stage build).
-    *   Alpine-based runtime for minimal image footprint.
-    *   Optimized build context via `.dockerignore`.
+Build a high-performance, self-hosted file browser that treats ZIP archives as normal folders, so users can browse, search, and stream files inside archives without extraction.
 
----
+Success criteria:
+- ZIP path transparency: physical and archive-internal paths behave consistently in API and UI.
+- Seekable media streaming: HTTP Range support works for large files and files inside ZIP archives.
+- NAS-friendly operation: low memory pressure, controlled CPU, and low unnecessary disk IO.
+- Responsive UI at scale: large directory rendering and smooth preview experience on desktop and mobile.
 
-## 3. Implementation Phases
+## Agent Mission
 
-### Phase 1: The Smart VFS Engine (Backend MVP)
-**Goal:** Create a "Stackable" VFS using Afero.
-1.  **Path Resolver (Longest Physical Match):** 
-    *   Walk the OS path first. The first segment that is a *file* marks the boundary where the virtual ZIP path begins. Supports special characters via proper URL unescaping.
-2.  **Mount Table:** 
-    *   LRU cache with reference counting for active streams.
-3.  **Capabilities-Aware API (`/api/ls`):**
-    *   Return a JSON list where each item has a `capabilities` bitmask. Supports "Auto-Enter" for single-folder ZIP roots.
-4.  **Streaming API (`/api/raw`):**
-    *   Standard `http.ServeContent` for robust Range request handling.
+When making changes, optimize for correctness and operational stability first, then performance and UX.
 
-### Phase 2: Metadata Indexing (The "Hybrid" Strategy)
-**Goal:** Low-IO discovery and search.
-1.  **Lazy Discovery:** Index folders and ZIP central directories only when accessed by the user.
-2.  **Active Watching (NAS-Optimized):** 
-    *   Only use `fsnotify` on the currently viewed directory and its children. 
-    *   Dynamically "unwatch" folders as the user navigates away to stay under `max_user_watches` limits.
-3.  **SQLite FTS5:** Ultra-fast search across indexed paths.
+Primary rule:
+- Preserve archive transparency end-to-end. If a change breaks archive-as-folder behavior, it is a regression.
 
-### Phase 3: The "Finder" UI
-**Goal:** Responsive, "seamless" archive browsing. Read UI.md for detail guideline of the UI.
-1.  **Navigation System:**
-    *   URL-driven navigation: `app.com/#/browse/archive.zip/internal/path`.
-    *   Breadcrumbs with dark mode support.
-2.  **Multi-Layout Engine:**
-    *   **Grid**: Large thumbnails with smart name truncation.
-    *   **List**: Compact view for high-speed scanning.
-    *   **Details**: Informational view with file sizes and modification dates.
-3.  **Virtual Grid View:**
-    *   Render 100k+ items using `TanStack Virtual`.
-    *   "Quick Look" triggered by click or spacebar.
+## Architecture Snapshot
 
-### Phase 4: The Image Pipeline (Optimized for Weak CPUs)
-**Goal:** Fast previews without CPU spikes.
-1.  **Fast Identity Caching:**
-    *   Cache keys generated via `Path + Size + ModTime` ($O(1)$ calculation) to avoid heavy hashing.
-2.  **Priority Worker Pool:**
-    *   **High Priority:** Images in current viewport.
-    *   **Low Priority:** Prefetching next/previous items.
-3.  **WebP-First Strategy:**
-    *   Default to WebP encoding for the best balance of speed and compression on weak CPUs.
+- Backend: Go service exposing file list, search, thumbnail, and raw stream endpoints.
+- VFS core: path peeling plus archive mount cache to bridge OS paths and ZIP virtual paths.
+- Indexing: SQLite metadata index with FTS, fed lazily from directory/zip reads and watcher updates.
+- Frontend: Vue app with virtualized listing, preview flows, and mobile-first interactions.
+- Deployment: multi-stage Docker image and compose setup for self-hosted NAS-like environments.
 
-### Phase 5: Hardening & Docker
-1.  **Security:** Sanitize internal ZIP paths ("Zip Slip") and enforce read-only mounts.
-2.  **Dockerization:** Alpine-based multi-stage build optimized for zero-dependency portability (CGO-free).
+## Non-Negotiable Invariants
 
----
+1. Paths
+- Input paths may contain spaces, brackets, and encoded characters.
+- Decoding and normalization must not break valid filenames.
+- Path traversal outside library root must never be possible.
 
-## 4. NAS-Specific Optimization Strategy
+2. Streaming
+- Raw endpoint must keep proper content type and Range behavior.
+- Avoid loading full media into memory; prefer streaming interfaces.
 
-| Feature | Strategy | Why? |
-| :--- | :--- | :--- |
-| **Search** | SQLite FTS5 | Instant search with minimal CPU/RAM. |
-| **Disk IO** | Active Watching | Avoids crashing NAS via inotify limits. |
-| **RAM** | LRU + RefCount | Protects memory while keeping archives "warm." |
-| **Cache** | Fast Identity | Avoids CPU-heavy SHA256 hashing. |
-| **Video** | `ServeContent` | Native Go implementation of seekable streaming. |
-| **Paths** | Auto-Unescape | Handles filenames with brackets and spaces common in media libraries. |
-| **Navigation** | Auto-Enter | Automatically skips redundant single-folder roots in archives. |
+3. Archive lifecycle
+- Mounted archives use cache plus reference counting semantics.
+- Active readers must not be invalidated by cache eviction.
+
+4. Indexing
+- Index updates should be incremental/lazy where possible.
+- Search should remain bounded and performant.
+
+5. UX behavior
+- Auto-enter logic for single-root ZIP archives should remain consistent.
+- Grid/list/details and preview navigation should stay functional on mobile and desktop.
+
+## Stack and Why It Was Chosen
+
+- Go 1.24+: predictable performance, good concurrency, strong stdlib.
+- Chi: lightweight routing and middleware composition.
+- Afero: filesystem abstraction for transparent VFS behavior.
+- archive/zip: native ZIP support.
+- hashicorp/golang-lru/v2: cache eviction with bounded resource usage.
+- modernc.org/sqlite + sqlc: portable typed data layer.
+- fsnotify: near-real-time metadata refresh.
+- imaging: pure-Go thumbnail generation.
+- Vue 3 + Vite + TypeScript: fast UI iteration with typed contracts.
+- TanStack Query + Virtual: reliable async state and scalable list rendering.
+- Tailwind v4: rapid, consistent UI styling.
+- PhotoSwipe + Plyr: robust media preview UX.
+- Docker multi-stage: reproducible deploy with small runtime image.
+
+## Repository Landmarks
+
+- Server entry: cmd/server/main.go
+- API handlers: internal/api
+- VFS engine: internal/vfs
+- Data/indexing layer: internal/data
+- Shared capability flags: pkg/util/capabilities.go
+- Frontend app and components: frontend/src
+- UI design decisions: UI.md
+- Stack summary: STACK.md
+- File map: STRUCTURE.md
+
+## Agent Workflows
+
+### A. Backend behavior change
+
+1. Identify invariant touched (path, stream, cache, index).
+2. Update minimal code surface in internal/api, internal/vfs, or internal/data.
+3. Add or adjust tests nearest to change:
+   - internal/api/handlers_test.go
+   - internal/vfs/*_test.go
+4. Validate with targeted go tests before broad runs.
+
+Definition of done:
+- No path transparency regressions.
+- Range and preview-related behavior still work.
+- Existing tests pass for touched modules.
+
+### B. Frontend UX or API integration change
+
+1. Keep API contract compatibility with frontend/src/api.ts and backend responses.
+2. Preserve virtualization and responsive behavior in listing components.
+3. Verify preview behavior for image/video/text and back-navigation consistency.
+
+Definition of done:
+- No broken navigation states.
+- Large list performance characteristics unchanged or improved.
+- Mobile interaction paths still functional.
+
+### C. Data/index/search change
+
+1. Update schema.sql and queries.sql first.
+2. Regenerate sqlc outputs when query/schema changes are intentional.
+3. Ensure indexer code aligns with new query contracts.
+
+Definition of done:
+- Search/list remain fast and correct.
+- No mismatch between generated query code and runtime usage.
+
+## Practical Commands
+
+Backend:
+- go mod download
+- go run cmd/server/main.go
+- go test ./...
+
+Frontend:
+- cd frontend
+- npm install --legacy-peer-deps
+- npm run dev
+- npm run build
+
+Docker:
+- docker-compose up -d
+
+UI Testing (Playwright):
+- Use `webapp-testing` skill for browser-based verification.
+- To run a test with managed servers:
+  ```bash
+  python3 scripts/with_server.py \
+    --server "go run cmd/server/main.go" --port 8080 \
+    --server "cd frontend && npm run dev" --port 5173 \
+    -- python3 your_test.py
+  ```
+- Use `playwright-skill` for custom automation scripts in `/tmp`.
+- Always test both **Desktop** and **Mobile (iPhone 13 simulation)** for gesture-heavy features.
+
+## Common Risk Areas
+
+- URL encode/decode mismatches between frontend and backend raw path handling.
+- Archive reader lifecycle leaks or premature close during seeks.
+- Watcher churn on large trees causing resource pressure.
+- UI regressions in history/popstate behavior across image and non-image preview modes.
+- Interaction logic (like drag-to-seek) breaking due to missing touch-action rules or threshold logic.
+
+## Decision Rules for Agents
+
+- Prefer small, targeted patches over wide refactors.
+- Preserve public API shapes unless explicitly changing contracts.
+- Add tests for bug fixes when feasible.
+- Use Playwright to verify complex UI interactions or gesture-heavy fixes.
+- If behavior is ambiguous, align with project goal: archive transparency plus NAS-friendly performance.
+
+## Future Priorities
+
+- Harden path and archive security checks further.
+- Improve watcher strategy for very large libraries.
+- Expand test coverage for edge cases in encoded and nested archive paths.
