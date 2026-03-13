@@ -24,5 +24,5 @@ const isZip = props.name.toLowerCase().endsWith('.zip');
   <FileVideo v-else-if="props.capabilities & CAP_STREAM" class="w-full h-full text-indigo-500 fill-indigo-500/10 dark:fill-indigo-400/20 transition-colors" />
   <FileImage v-else-if="props.capabilities & CAP_RENDER" class="w-full h-full text-rose-500 fill-rose-500/10 dark:fill-rose-400/20 transition-colors" />
   <FileCode v-else-if="props.capabilities & CAP_EDIT" class="w-full h-full text-emerald-500 fill-emerald-500/10 dark:fill-emerald-400/20 transition-colors" />
-  <FileGeneric v-else class="w-full h-full text-slate-400 fill-slate-400/5 dark:fill-dracula-500/10 transition-colors" />
+  <FileGeneric v-else class="w-full h-full text-slate-400 fill-slate-400/5 dark:fill-dracula-400/10 transition-colors" />
 </template>

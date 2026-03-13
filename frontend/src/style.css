@@ -18,16 +18,24 @@
   --color-brand-950: #172554;
 
   --color-dracula-50: #f8f8f2;
-  --color-dracula-100: #f0f0ea;
-  --color-dracula-200: #e8e8e2;
-  --color-dracula-300: #d0d0c8;
-  --color-dracula-400: #bd93f9;
-  --color-dracula-500: #6272a4;
-  --color-dracula-600: #526191;
-  --color-dracula-700: #44475a;
-  --color-dracula-800: #343746;
-  --color-dracula-900: #282a36;
-  --color-dracula-950: #21222c;
+  --color-dracula-100: #e8e8e2;
+  --color-dracula-200: #d0d0c8;
+  --color-dracula-300: #9ea0a3;
+  --color-dracula-400: #6272a4;
+  --color-dracula-500: #44475a;
+  --color-dracula-600: #343746;
+  --color-dracula-700: #282a36;
+  --color-dracula-800: #21222c;
+  --color-dracula-900: #191a21;
+  --color-dracula-950: #101116;
+
+  --color-dracula-purple: #bd93f9;
+  --color-dracula-pink: #ff79c6;
+  --color-dracula-cyan: #8be9fd;
+  --color-dracula-green: #50fa7b;
+  --color-dracula-orange: #ffb86c;
+  --color-dracula-yellow: #f1fa8c;
+  --color-dracula-red: #ff5555;
 }
 
 :root {
@@ -36,10 +44,10 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  --bg-primary: #f9fafb;
-  --text-primary: #1f2937;
-  --scrollbar-thumb: #e5e7eb;
-  --scrollbar-thumb-hover: #d1d5db;
+  --bg-primary: #f8fafc;
+  --text-primary: #0f172a;
+  --scrollbar-thumb: #e2e8f0;
+  --scrollbar-thumb-hover: #cbd5e1;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -97,4 +105,16 @@ body {
 .page-fade-enter-from,
 .page-fade-leave-to {
   opacity: 0;
+}
+
+/* Loading Bar Animation */
+.loading-bar {
+  animation: loading-bar-progress 1.5s infinite linear;
+  transform-origin: 0% 50%;
+}
+
+@keyframes loading-bar-progress {
+  0% { transform: translateX(0) scaleX(0); }
+  40% { transform: translateX(0) scaleX(0.4); }
+  100% { transform: translateX(100%) scaleX(0.5); }
 }

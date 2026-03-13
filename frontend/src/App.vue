@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { useSwipe } from '@vueuse/core';
+import { usePointerSwipe } from '@vueuse/core';
 import { 
   Search, 
   Loader2, 
@@ -48,6 +48,52 @@ const previewStage = ref<HTMLElement | null>(null);
 const transitionName = ref('slide-next');
 let player: Plyr | null = null;
 const lightbox = ref<PhotoSwipeLightbox | null>(null);
+
+// Seek variables for video
+const isSeeking = ref(false);
+const seekDelta = ref(0);
+const initialSeekTime = ref(0);
+
+// Swipe navigation and Video Seek
+const { distanceX, isSwiping } = usePointerSwipe(previewStage, {
+  onSwipeStart() {
+    if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM)) {
+      isSeeking.value = true;
+      initialSeekTime.value = player?.currentTime || 0;
+    }
+  },
+  onSwipe() {
+    if (isSeeking.value && player) {
+      // 90 seconds per screen width
+      const scrubAmount = Math.min(player.duration, 90);
+      const deltaX = -distanceX.value; // distanceX is positive when swiping left
+      seekDelta.value = (deltaX / window.innerWidth) * scrubAmount;
+      
+      let newTime = initialSeekTime.value + seekDelta.value;
+      player.currentTime = Math.max(0, Math.min(newTime, player.duration));
+    }
+  },
+  onSwipeEnd(_e, direction) {
+    if (isSeeking.value) {
+      isSeeking.value = false;
+      seekDelta.value = 0;
+    } else {
+      // Minimal distance to trigger navigation (e.g. 50px)
+      if (Math.abs(distanceX.value) > 50) {
+        if (direction === 'left') navigatePreview('next');
+        if (direction === 'right') navigatePreview('prev');
+      }
+    }
+  },
+});
+
+// Safety reset for seeking overlay
+watch(isSwiping, (val) => {
+  if (!val && isSeeking.value) {
+    isSeeking.value = false;
+    seekDelta.value = 0;
+  }
+});
 
 // Theme and Layout State
 const isDarkMode = ref(localStorage.getItem('theme') === 'dark');
@@ -192,10 +238,6 @@ onMounted(() => {
   }
 });
 
-// Seek variables for video
-let touchStartX = 0;
-let initialSeekTime = 0;
-
 // Preload Engine: Fetch upcoming images in the background
 watch(previewItem, (item) => {
   if (!item || !displayItems.value) return;
@@ -218,39 +260,6 @@ watch(previewItem, (item) => {
       img.src = getRawUrl(nextItem.path);
     }
   });
-});
-
-// Swipe navigation
-useSwipe(previewStage, {
-  onSwipeStart(e: TouchEvent) {
-    if (player && player.fullscreen.active && e.touches.length > 0) {
-      touchStartX = e.touches[0].clientX;
-      initialSeekTime = player.currentTime;
-    }
-  },
-  onSwipe(e: TouchEvent) {
-    if (player && player.fullscreen.active && e.touches.length > 0) {
-      const currentX = e.touches[0].clientX;
-      const deltaX = currentX - touchStartX;
-
-      // Calculate scrub amount. Scrub up to the full duration across the screen width.
-      // E.g., moving across the screen shifts the time by 10% of duration, maxing out at 5 minutes?
-      // Actually, a standard ratio of 90 seconds across full screen is good for mobile. Let's use 90s.
-      // For very short videos, this shouldn't exceed the duration.
-      const scrubAmount = Math.min(player.duration, 90);
-      const seekDelta = (deltaX / window.innerWidth) * scrubAmount;
-
-      let newTime = initialSeekTime + seekDelta;
-      player.currentTime = Math.max(0, Math.min(newTime, player.duration));
-    }
-  },
-  onSwipeEnd(_e, direction) {
-    if (player && player.fullscreen.active) {
-      return; // Skip file navigation when swiping in full screen video
-    }
-    if (direction === 'left') navigatePreview('next');
-    if (direction === 'right') navigatePreview('prev');
-  },
 });
 
 const { data: listData, isLoading, error, refetch } = useQuery({
@@ -423,9 +432,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-[#f8fafc] dark:bg-dracula-950 overflow-hidden text-slate-900 dark:text-dracula-100 font-sans selection:bg-blue-100 dark:selection:bg-blue-900/30">
+  <div class="flex flex-col h-screen bg-[#f8fafc] dark:bg-dracula-700 overflow-hidden text-slate-900 dark:text-dracula-50 font-sans selection:bg-blue-100 dark:selection:bg-blue-900/30">
     <!-- Modern Header -->
-    <header class="flex items-center justify-between px-3 sm:px-8 py-3 sm:py-4 bg-white/80 dark:bg-dracula-900/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-dracula-800/60 sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+    <header class="flex items-center justify-between px-3 sm:px-8 py-3 sm:py-4 bg-white/80 dark:bg-dracula-800/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-dracula-600/60 sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
       <div class="flex items-center gap-2 sm:gap-4 shrink-0">
         <button
           @click="handleNavigate('/')"
@@ -457,7 +466,7 @@ onUnmounted(() => {
           @keyup.enter="handleSearch"
           type="text" 
           placeholder="Search..."
-          class="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-dracula-800 border border-transparent focus:bg-white dark:focus:bg-dracula-700 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 dark:text-dracula-400"
+          class="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-dracula-800 border border-transparent focus:bg-white dark:focus:bg-dracula-700 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 dark:text-dracula-300"
         >
         <button 
           v-if="searchQuery" 
@@ -476,7 +485,7 @@ onUnmounted(() => {
             @click="setLayoutMode('grid')"
             :class="[
               'p-1.5 rounded-lg transition-all',
-              layoutMode === 'grid' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-300'
+              layoutMode === 'grid' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
             ]"
             title="Grid View"
           >
@@ -486,7 +495,7 @@ onUnmounted(() => {
             @click="setLayoutMode('list')"
             :class="[
               'p-1.5 rounded-lg transition-all',
-              layoutMode === 'list' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-300'
+              layoutMode === 'list' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
             ]"
             title="List View"
           >
@@ -496,7 +505,7 @@ onUnmounted(() => {
             @click="setLayoutMode('details')"
             :class="[
               'p-1.5 rounded-lg transition-all',
-              layoutMode === 'details' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-300'
+              layoutMode === 'details' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
             ]"
             title="Details View"
           >
@@ -532,41 +541,36 @@ onUnmounted(() => {
     </header>
 
     <!-- Contextual Actions Bar -->
-    <div class="flex items-center px-4 sm:px-8 py-2 bg-white dark:bg-dracula-900 border-b border-slate-200/60 dark:border-dracula-800/60 z-20">
+    <div class="flex items-center px-4 sm:px-8 py-2 bg-white dark:bg-dracula-800/50 border-b border-slate-200/60 dark:border-dracula-600/60 z-20">
       <button 
         v-if="currentPath !== '/'"
         @click="goBack"
-        class="mr-2 p-1.5 hover:bg-slate-100 dark:hover:bg-dracula-800 rounded-lg text-slate-500 dark:text-dracula-400 transition-colors group focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        class="mr-2 p-1.5 hover:bg-slate-100 dark:hover:bg-dracula-600 rounded-lg text-slate-500 dark:text-dracula-200 transition-colors group focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
         title="Go Back"
         aria-label="Go back"
       >
         <ChevronLeft class="w-5 h-5 group-active:-translate-x-1 transition-transform" />
       </button>
-      <Breadcrumbs :path="currentPath" @navigate="handleNavigate" class="flex-1 border-none bg-transparent shadow-none px-0 dark:text-dracula-300" />
+      <Breadcrumbs :path="currentPath" @navigate="handleNavigate" class="flex-1 border-none bg-transparent shadow-none px-0 dark:text-dracula-200" />
     </div>
 
     <!-- Main Content Area -->
     <main class="flex-1 relative overflow-hidden flex flex-col">
-      <!-- State Transitions Overlay -->
-      <transition name="fade">
-        <div v-if="showLoading" class="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-dracula-950/40 backdrop-blur-[1px] z-10">
-          <div class="flex flex-col items-center gap-4 p-8 bg-white/80 dark:bg-dracula-900/80 rounded-3xl shadow-xl border border-white dark:border-dracula-800">
-            <div class="relative">
-              <div class="w-12 h-12 border-4 border-blue-100 dark:border-blue-900/30 rounded-full"></div>
-              <div class="w-12 h-12 border-4 border-t-blue-600 rounded-full animate-spin absolute top-0"></div>
-            </div>
-            <p class="text-xs font-bold text-slate-500 dark:text-dracula-400 uppercase tracking-widest">Accessing VFS</p>
-          </div>
-        </div>
-      </transition>
+      <!-- Non-blocking Loading Bar -->
+      <div class="absolute top-0 left-0 right-0 h-0.5 sm:h-1 z-30 overflow-hidden pointer-events-none">
+        <div 
+          v-show="showLoading" 
+          class="w-full h-full bg-blue-500 dark:bg-dracula-purple origin-left loading-bar"
+        ></div>
+      </div>
 
       <!-- Connection Error UI -->
-      <div v-if="error" class="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-dracula-950">
-        <div class="max-w-md w-full p-8 bg-white dark:bg-dracula-900 rounded-[32px] shadow-2xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-dracula-800 text-center transform transition-all duration-500 hover:scale-[1.01]">
+      <div v-if="error" class="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-dracula-700">
+        <div class="max-w-md w-full p-8 bg-white dark:bg-dracula-800 rounded-[32px] shadow-2xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-dracula-600 text-center transform transition-all duration-500 hover:scale-[1.01]">
           <div class="w-20 h-20 bg-rose-50 dark:bg-rose-900/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
             <AlertCircle class="w-10 h-10 text-rose-500" />
           </div>
-          <h2 class="text-xl font-black text-slate-800 dark:text-dracula-200 mb-3">Service Unavailable</h2>
+          <h2 class="text-xl font-black text-slate-800 dark:text-dracula-100 mb-3">Service Unavailable</h2>
           <p class="text-slate-500 dark:text-dracula-400 mb-8 text-sm leading-relaxed">The archive engine is currently unreachable. This might be due to a connection drop or server maintenance.</p>
           <button @click="() => refetch()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/25 transition-all">
             Reconnect to Engine
@@ -586,17 +590,17 @@ onUnmounted(() => {
         
         <!-- Empty State UI -->
         <div v-else-if="!showLoading && !error" class="h-full flex flex-col items-center justify-center p-12 text-center">
-          <div class="w-32 h-32 bg-slate-100 dark:bg-dracula-900 rounded-[40px] flex items-center justify-center mb-8 relative">
-            <Search class="w-12 h-12 text-slate-300 dark:text-dracula-700" />
-            <div class="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-dracula-800 rounded-2xl shadow-sm flex items-center justify-center border border-slate-100 dark:border-dracula-700">
-              <div class="w-6 h-1 bg-slate-200 dark:bg-dracula-700 rounded-full"></div>
+          <div class="w-32 h-32 bg-slate-100 dark:bg-dracula-800 rounded-[40px] flex items-center justify-center mb-8 relative">
+            <Search class="w-12 h-12 text-slate-300 dark:text-dracula-600" />
+            <div class="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-dracula-700 rounded-2xl shadow-sm flex items-center justify-center border border-slate-100 dark:border-dracula-600">
+              <div class="w-6 h-1 bg-slate-200 dark:bg-dracula-600 rounded-full"></div>
             </div>
           </div>
-          <h3 class="text-lg font-bold text-slate-700 dark:text-dracula-300 mb-2">No items found</h3>
-          <p class="text-slate-400 dark:text-dracula-500 text-sm max-w-[240px] leading-relaxed">We couldn't find anything matching your request in this directory.</p>
+          <h3 class="text-lg font-bold text-slate-700 dark:text-dracula-200 mb-2">No items found</h3>
+          <p class="text-slate-400 dark:text-dracula-400 text-sm max-w-[240px] leading-relaxed">We couldn't find anything matching your request in this directory.</p>
           <button 
             @click="handleNavigate('/')"
-            class="mt-8 px-6 py-2.5 bg-white dark:bg-dracula-800 border border-slate-200 dark:border-dracula-700 text-slate-600 dark:text-dracula-400 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-dracula-700 transition-colors"
+            class="mt-8 px-6 py-2.5 bg-white dark:bg-dracula-800 border border-slate-200 dark:border-dracula-600 text-slate-600 dark:text-dracula-200 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-dracula-700 transition-colors"
           >
             Back to Library
           </button>
@@ -608,7 +612,7 @@ onUnmounted(() => {
     <transition name="preview-zoom">
       <div 
         v-if="previewItem" 
-        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/95 dark:bg-dracula-950/95 backdrop-blur-2xl"
         @click="closePreview()"
       >
         <!-- Navigation Buttons -->
@@ -636,7 +640,7 @@ onUnmounted(() => {
               </div>
               <div class="truncate text-left">
                 <h4 class="text-white text-sm font-bold truncate">{{ previewItem.name }}</h4>
-                <p class="text-[10px] text-slate-400 dark:text-dracula-500 font-bold uppercase tracking-wider">{{ (previewItem.size / 1024 / 1024).toFixed(2) }} MB</p>
+                <p class="text-[10px] text-slate-400 dark:text-dracula-300 font-bold uppercase tracking-wider">{{ (previewItem.size / 1024 / 1024).toFixed(2) }} MB</p>
               </div>
             </div>
             
@@ -671,7 +675,7 @@ onUnmounted(() => {
               </div>
 
               <!-- Video Stage -->
-              <div v-else-if="previewItem.capabilities & CAP_STREAM" :key="previewItem.path + '-v'" class="w-full h-full flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl bg-black">
+              <div v-else-if="previewItem.capabilities & CAP_STREAM" :key="previewItem.path + '-v'" class="w-full h-full flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl bg-black relative">
                 <video 
                   ref="videoElement"
                   playsinline 
@@ -681,21 +685,35 @@ onUnmounted(() => {
                 >
                   <source :src="getRawUrl(previewItem.path)" />
                 </video>
+
+                <!-- Seek Overlay -->
+                <transition name="fade">
+                  <div v-if="isSeeking" class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 bg-black/20 backdrop-blur-[2px]">
+                    <div class="px-8 py-4 bg-black/60 backdrop-blur-xl rounded-3xl border border-white/10 flex flex-col items-center gap-2 shadow-2xl">
+                      <div class="text-4xl font-black text-white tracking-tighter">
+                        {{ seekDelta > 0 ? '+' : '' }}{{ Math.round(seekDelta) }}s
+                      </div>
+                      <div class="text-sm font-bold text-blue-400 uppercase tracking-widest">
+                        Seeking
+                      </div>
+                    </div>
+                  </div>
+                </transition>
               </div>
 
               <!-- Text Stage -->
-              <div v-else-if="previewItem.capabilities & CAP_EDIT" :key="previewItem.path + '-t'" class="w-full max-w-5xl h-full bg-slate-900 dark:bg-black/40 rounded-2xl border border-white/10 dark:border-white/5 overflow-hidden flex flex-col shadow-2xl">
+              <div v-else-if="previewItem.capabilities & CAP_EDIT" :key="previewItem.path + '-t'" class="w-full max-w-5xl h-full bg-slate-900 dark:bg-dracula-900 rounded-2xl border border-white/10 dark:border-white/5 overflow-hidden flex flex-col shadow-2xl">
                 <div class="px-4 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <FileText class="w-4 h-4 text-slate-400 dark:text-dracula-500" />
-                    <span class="text-xs font-bold text-slate-300 dark:text-dracula-400 uppercase tracking-widest">Document Preview</span>
+                    <FileText class="w-4 h-4 text-slate-400 dark:text-dracula-400" />
+                    <span class="text-xs font-bold text-slate-300 dark:text-dracula-200 uppercase tracking-widest">Document Preview</span>
                   </div>
                   <div v-if="isTextLoading" class="flex items-center gap-2">
                     <Loader2 class="w-3 h-3 text-blue-500 animate-spin" />
-                    <span class="text-[10px] text-slate-500 dark:text-dracula-600 font-bold uppercase tracking-tighter">Loading content...</span>
+                    <span class="text-[10px] text-slate-500 dark:text-dracula-500 font-bold uppercase tracking-tighter">Loading content...</span>
                   </div>
                 </div>
-                <div class="flex-1 overflow-auto p-6 sm:p-10 font-mono text-sm leading-relaxed text-slate-300 dark:text-dracula-400 selection:bg-blue-500/30">
+                <div class="flex-1 overflow-auto p-6 sm:p-10 font-mono text-sm leading-relaxed text-slate-300 dark:text-dracula-200 selection:bg-blue-500/30">
                   <pre v-if="textContent" class="whitespace-pre-wrap break-all text-left">{{ textContent }}</pre>
                   <div v-else-if="isTextLoading" class="h-full flex items-center justify-center">
                     <div class="space-y-4 w-full max-w-md">
@@ -711,10 +729,10 @@ onUnmounted(() => {
               <!-- Fallback Stage -->
               <div v-else :key="'fallback'" class="p-12 bg-white/5 rounded-3xl border border-white/10 text-center max-w-sm">
                 <div class="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <AlertCircle class="w-10 h-10 text-slate-400 dark:text-dracula-500" />
+                  <AlertCircle class="w-10 h-10 text-slate-400 dark:text-dracula-400" />
                 </div>
                 <h3 class="text-white font-bold text-lg mb-2">No Preview</h3>
-                <p class="text-slate-400 dark:text-dracula-500 text-xs mb-8 leading-relaxed">This file type requires external software to view. You can download the raw data below.</p>
+                <p class="text-slate-400 dark:text-dracula-400 text-xs mb-8 leading-relaxed">This file type requires external software to view. You can download the raw data below.</p>
                 <a 
                   :href="getRawUrl(previewItem.path, true)" 
                   class="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
