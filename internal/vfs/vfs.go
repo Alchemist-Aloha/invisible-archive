@@ -150,6 +150,17 @@ func (m *Manager) ReadDir(path string) ([]os.FileInfo, string, error) {
 	return finalItems, effectivePath, err
 }
 
+// parseZipEntryName extracts the first path component and whether it should be
+// treated as a directory. If no further path separator is found, it returns
+// the full path and uses fallbackIsDir to determine directory-ness.
+func parseZipEntryName(path string, fallbackIsDir bool) (name string, isDir bool) {
+	idx := strings.IndexByte(path, '/')
+	if idx >= 0 {
+		return path[:idx], true
+	}
+	return path, fallbackIsDir
+}
+
 func (m *Manager) readZipDir(r *zip.ReadCloser, vPath string) ([]os.FileInfo, error) {
 	vPath = strings.Trim(filepath.ToSlash(vPath), "/")
 	seen := make(map[string]bool)
@@ -160,15 +171,12 @@ func (m *Manager) readZipDir(r *zip.ReadCloser, vPath string) ([]os.FileInfo, er
 		var name string
 		var isDir bool
 
+		// Use IndexByte instead of Split for a zero-allocation fast path
 		if vPath == "" {
-			parts := strings.Split(fPath, "/")
-			name = parts[0]
-			isDir = len(parts) > 1 || f.FileInfo().IsDir()
+			name, isDir = parseZipEntryName(fPath, f.FileInfo().IsDir())
 		} else if strings.HasPrefix(fPath, vPath+"/") {
 			subPath := strings.TrimPrefix(fPath, vPath+"/")
-			parts := strings.Split(subPath, "/")
-			name = parts[0]
-			isDir = len(parts) > 1 || f.FileInfo().IsDir()
+			name, isDir = parseZipEntryName(subPath, f.FileInfo().IsDir())
 		} else {
 			continue
 		}
