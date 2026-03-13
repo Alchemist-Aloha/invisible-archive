@@ -22,9 +22,6 @@ import { fetchList, searchFiles, getRawUrl, getThumbUrl, fetchText, CAP_STREAM, 
 import type { FileItem } from './api';
 import Breadcrumbs from './components/Breadcrumbs.vue';
 import FileGrid from './components/FileGrid.vue';
-// @ts-ignore
-import Plyr from 'plyr';
-import 'plyr/dist/plyr.css';
 import PhotoSwipeLightbox from 'photoswipe/lightbox';
 import 'photoswipe/style.css';
 
@@ -46,7 +43,6 @@ const showInfo = ref(false);
 const videoElement = ref<HTMLVideoElement | null>(null);
 const previewStage = ref<HTMLElement | null>(null);
 const transitionName = ref('slide-next');
-const player = ref<Plyr | null>(null);
 const lightbox = ref<PhotoSwipeLightbox | null>(null);
 
 // Seek variables for video
@@ -55,66 +51,37 @@ const seekDelta = ref(0);
 const initialSeekTime = ref(0);
 const shouldIgnoreSwipe = ref(false);
 
-const cleanupPlayer = () => {
-  if (player.value) {
-    player.value.destroy();
-    player.value = null;
-  }
-};
-
-const initPlayer = () => {
-  if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM) && videoElement.value) {
-    cleanupPlayer();
-    player.value = new Plyr(videoElement.value, {
-      autoplay: true,
-      hideControls: true,
-      controls: [
-        'play-large',
-        'play',
-        'fast-forward',
-        'progress',
-        'current-time',
-        'mute',
-        'settings',
-        'pip',
-        'fullscreen',
-      ],
-    });
-  }
-};
-
 // Swipe navigation and Video Seek
 const { distanceX, isSwiping } = usePointerSwipe(previewStage, {
-  onSwipeStart(e) {
-    // Ignore if clicking on player controls
-    if ((e.target as HTMLElement)?.closest('.plyr__controls')) {
-      shouldIgnoreSwipe.value = true;
-      return;
-    }
+  onSwipeStart() {
+    // Ignore if clicking on native controls. Native controls are in the shadow DOM, 
+    // but typically clicking them doesn't bubble a draggable pointer event on the video container the same way,
+    // or we can just let it be. If they click the native play button, we shouldn't start seeking.
+    // We'll rely on the movement threshold to differentiate clicks from seeks.
     shouldIgnoreSwipe.value = false;
   },
   onSwipe() {
     if (shouldIgnoreSwipe.value) return;
 
-    if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM) && player.value) {
+    if (previewItem.value && (previewItem.value.capabilities & CAP_STREAM) && videoElement.value) {
       // Threshold: 10px movement to start seeking
       if (!isSeeking.value && Math.abs(distanceX.value) > 10) {
         isSeeking.value = true;
-        initialSeekTime.value = player.value.currentTime;
+        initialSeekTime.value = videoElement.value.currentTime;
       }
 
       if (isSeeking.value) {
         // 90 seconds per screen width
-        const scrubAmount = Math.min(player.value.duration, 90);
+        const scrubAmount = Math.min(videoElement.value.duration || 0, 90);
         const deltaX = -distanceX.value; // distanceX is positive when swiping left
         seekDelta.value = (deltaX / window.innerWidth) * scrubAmount;
         
         let newTime = initialSeekTime.value + seekDelta.value;
-        player.value.currentTime = Math.max(0, Math.min(newTime, player.value.duration));
+        videoElement.value.currentTime = Math.max(0, Math.min(newTime, videoElement.value.duration || 0));
       }
     }
   },
-  onSwipeEnd(_e, direction) {
+  onSwipeEnd() {
     if (shouldIgnoreSwipe.value) {
       shouldIgnoreSwipe.value = false;
       return;
@@ -123,13 +90,8 @@ const { distanceX, isSwiping } = usePointerSwipe(previewStage, {
     if (isSeeking.value) {
       isSeeking.value = false;
       seekDelta.value = 0;
-    } else {
-      // Minimal distance to trigger navigation (e.g. 50px)
-      if (Math.abs(distanceX.value) > 50) {
-        if (direction === 'left') navigatePreview('next');
-        if (direction === 'right') navigatePreview('prev');
-      }
     }
+    // Note: Swipe-to-navigate has been disabled as requested.
   },
 });
 
@@ -389,8 +351,6 @@ const handlePreview = (item: FileItem) => {
 };
 
 const closePreview = (triggerBack = true) => {
-  cleanupPlayer();
-  
   // If we closed via UI/Esc and there's a history entry to pop
   if (triggerBack && history.state?.customPreview) {
     history.back();
@@ -424,13 +384,6 @@ const navigatePreview = (direction: 'prev' | 'next') => {
   }
 };
 
-watch(previewItem, (newItem, oldItem) => {
-  // If we changed items while previewing, clean up old player
-  if (newItem?.path !== oldItem?.path) {
-    cleanupPlayer();
-  }
-});
-
 const handleKeydown = (e: KeyboardEvent) => {
   if (!previewItem.value) {
     if (e.key === 'Backspace' && !isSearching.value) goBack();
@@ -443,6 +396,18 @@ const handleKeydown = (e: KeyboardEvent) => {
     case 'ArrowRight': navigatePreview('next'); break;
   }
 };
+
+const playVideo = () => {
+  if (videoElement.value) {
+    videoElement.value.play().catch(err => console.warn('Autoplay prevented:', err));
+  }
+};
+
+watch(videoElement, (el) => {
+  if (el) {
+    el.play().catch(err => console.warn('Autoplay prevented:', err));
+  }
+});
 
 onUnmounted(() => {
   window.removeEventListener('keydown', handleKeydown);
@@ -691,7 +656,7 @@ onUnmounted(() => {
             class="flex-1 flex items-center justify-center p-2 sm:p-4 overflow-hidden relative"
             :class="{ 'touch-none': previewItem?.capabilities & CAP_STREAM }"
           >
-            <Transition :name="transitionName" mode="out-in" @after-enter="initPlayer">
+            <Transition :name="transitionName" mode="out-in" @after-enter="playVideo">
               <!-- Image Stage -->
               <div v-if="previewItem.capabilities & CAP_RENDER" :key="previewItem.path" class="w-full h-full flex items-center justify-center">
                 <img 
@@ -702,16 +667,16 @@ onUnmounted(() => {
 
               <!-- Video Stage -->
               <div v-else-if="previewItem.capabilities & CAP_STREAM" :key="previewItem.path + '-v'" class="w-full h-full flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl bg-black relative">
-                <video 
+                <video
                   ref="videoElement"
-                  playsinline 
+                  playsinline
                   controls
+                  autoplay
                   crossorigin="anonymous"
                   class="w-full h-full"
                 >
                   <source :src="getRawUrl(previewItem.path)" />
                 </video>
-
                 <!-- Seek Overlay -->
                 <transition name="fade">
                   <div v-if="isSeeking" class="absolute inset-0 flex items-center justify-center pointer-events-none z-10 bg-black/20 backdrop-blur-[2px]">
@@ -825,32 +790,6 @@ onUnmounted(() => {
 /* Custom Font Utilities */
 @supports (font-variation-settings: normal) {
   :root { font-family: 'Inter var', sans-serif; }
-}
-
-/* Plyr Theming */
-:root {
-  --plyr-color-main: #2563eb;
-  --plyr-video-background: transparent;
-  --plyr-border-radius: 16px;
-}
-
-.plyr--video {
-  height: 100%;
-}
-
-/* Fix progress bar size on mobile */
-.plyr__progress {
-  flex-grow: 1 !important;
-}
-
-@media (max-width: 640px) {
-  .plyr__volume {
-    min-width: 0;
-    max-width: 80px;
-  }
-  .plyr__controls {
-    gap: 2px !important;
-  }
 }
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
