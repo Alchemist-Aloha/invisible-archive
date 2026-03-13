@@ -16,6 +16,18 @@
   --color-brand-800: #1e40af;
   --color-brand-900: #1e3a8a;
   --color-brand-950: #172554;
+
+  --color-dracula-50: #f8f8f2;
+  --color-dracula-100: #f0f0ea;
+  --color-dracula-200: #e8e8e2;
+  --color-dracula-300: #d0d0c8;
+  --color-dracula-400: #bd93f9;
+  --color-dracula-500: #6272a4;
+  --color-dracula-600: #526191;
+  --color-dracula-700: #44475a;
+  --color-dracula-800: #343746;
+  --color-dracula-900: #282a36;
+  --color-dracula-950: #21222c;
 }
 
 :root {
@@ -36,10 +48,10 @@
 }
 
 .dark {
-  --bg-primary: #0f172a;
-  --text-primary: #f1f5f9;
-  --scrollbar-thumb: #334155;
-  --scrollbar-thumb-hover: #475569;
+  --bg-primary: #282a36;
+  --text-primary: #f8f8f2;
+  --scrollbar-thumb: #44475a;
+  --scrollbar-thumb-hover: #6272a4;
 }
 
 body {

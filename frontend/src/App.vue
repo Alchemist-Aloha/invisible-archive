@@ -394,9 +394,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col h-screen bg-[#f8fafc] dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-100 dark:selection:bg-blue-900/30">
+  <div class="flex flex-col h-screen bg-[#f8fafc] dark:bg-dracula-950 overflow-hidden text-slate-900 dark:text-dracula-100 font-sans selection:bg-blue-100 dark:selection:bg-blue-900/30">
     <!-- Modern Header -->
-    <header class="flex items-center justify-between px-3 sm:px-8 py-3 sm:py-4 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-slate-800/60 sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+    <header class="flex items-center justify-between px-3 sm:px-8 py-3 sm:py-4 bg-white/80 dark:bg-dracula-900/80 backdrop-blur-xl border-b border-slate-200/60 dark:border-dracula-800/60 sticky top-0 z-30 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
       <div class="flex items-center gap-2 sm:gap-4 shrink-0">
         <button
           @click="handleNavigate('/')"
@@ -414,26 +414,26 @@ onUnmounted(() => {
           </svg>
         </button>
         <div class="hidden md:block">
-          <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-800 dark:text-slate-200 leading-none">
+          <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-800 dark:text-dracula-200 leading-none">
             Archive
           </h1>
-          <p class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">Invisible</p>
+          <p class="text-[10px] font-bold text-slate-400 dark:text-dracula-500 uppercase tracking-widest mt-0.5">Invisible</p>
         </div>
       </div>
       
       <div class="relative flex-1 max-w-lg mx-2 sm:mx-4 group">
-        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-slate-500 group-focus-within:text-blue-500 transition-colors" />
+        <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 dark:text-dracula-500 group-focus-within:text-blue-500 transition-colors" />
         <input 
           v-model="searchQuery"
           @keyup.enter="handleSearch"
           type="text" 
           placeholder="Search..."
-          class="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-slate-800 border border-transparent focus:bg-white dark:focus:bg-slate-700 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 dark:text-slate-400"
+          class="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-dracula-800 border border-transparent focus:bg-white dark:focus:bg-dracula-700 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 dark:text-dracula-400"
         >
         <button 
           v-if="searchQuery" 
           @click="searchQuery = ''; handleSearch()"
-          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg text-slate-400 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+          class="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-slate-200 dark:hover:bg-dracula-700 rounded-lg text-slate-400 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
           aria-label="Clear search"
         >
           <X class="w-3 h-3" />
@@ -442,12 +442,12 @@ onUnmounted(() => {
       
       <div class="flex items-center gap-1 sm:gap-2 shrink-0">
         <!-- Layout Toggle (Desktop: Full, Mobile: Cycle) -->
-        <div class="hidden sm:flex items-center bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200/50 dark:border-slate-700/50">
+        <div class="hidden sm:flex items-center bg-slate-100 dark:bg-dracula-800 p-1 rounded-xl border border-slate-200/50 dark:border-dracula-700/50">
           <button 
             @click="setLayoutMode('grid')"
             :class="[
               'p-1.5 rounded-lg transition-all',
-              layoutMode === 'grid' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              layoutMode === 'grid' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-300'
             ]"
             title="Grid View"
           >
@@ -457,7 +457,7 @@ onUnmounted(() => {
             @click="setLayoutMode('list')"
             :class="[
               'p-1.5 rounded-lg transition-all',
-              layoutMode === 'list' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              layoutMode === 'list' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-300'
             ]"
             title="List View"
           >
@@ -467,7 +467,7 @@ onUnmounted(() => {
             @click="setLayoutMode('details')"
             :class="[
               'p-1.5 rounded-lg transition-all',
-              layoutMode === 'details' ? 'bg-white dark:bg-slate-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'
+              layoutMode === 'details' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-300'
             ]"
             title="Details View"
           >
@@ -478,7 +478,7 @@ onUnmounted(() => {
         <!-- Mobile Layout Toggle -->
         <button 
           @click="cycleLayout"
-          class="sm:hidden p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50"
+          class="sm:hidden p-2 bg-slate-100 dark:bg-dracula-800 rounded-lg text-slate-500 dark:text-dracula-400 border border-slate-200/50 dark:border-dracula-700/50"
           aria-label="Cycle layout"
         >
           <LayoutGrid v-if="layoutMode === 'grid'" class="w-4 h-4" />
@@ -489,56 +489,56 @@ onUnmounted(() => {
         <!-- Theme Toggle -->
         <button 
           @click="toggleDarkMode"
-          class="p-2 sm:p-2.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg sm:rounded-xl text-slate-500 dark:text-slate-400 transition-colors border border-slate-200/50 dark:border-slate-700/50"
+          class="p-2 sm:p-2.5 bg-slate-100 dark:bg-dracula-800 hover:bg-slate-200 dark:hover:bg-dracula-700 rounded-lg sm:rounded-xl text-slate-500 dark:text-dracula-400 transition-colors border border-slate-200/50 dark:border-dracula-700/50"
           aria-label="Toggle dark mode"
         >
           <Sun v-if="isDarkMode" class="w-4 h-4" />
           <Moon v-else class="w-4 h-4" />
         </button>
 
-        <button class="hidden lg:block p-2.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 dark:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none" aria-label="Information">
+        <button class="hidden lg:block p-2.5 hover:bg-slate-100 dark:hover:bg-dracula-800 rounded-xl text-slate-500 dark:text-dracula-400 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none" aria-label="Information">
           <Info class="w-5 h-5" />
         </button>
       </div>
     </header>
 
     <!-- Contextual Actions Bar -->
-    <div class="flex items-center px-4 sm:px-8 py-2 bg-white dark:bg-slate-900 border-b border-slate-200/60 dark:border-slate-800/60 z-20">
+    <div class="flex items-center px-4 sm:px-8 py-2 bg-white dark:bg-dracula-900 border-b border-slate-200/60 dark:border-dracula-800/60 z-20">
       <button 
         v-if="currentPath !== '/'"
         @click="goBack"
-        class="mr-2 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors group focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
+        class="mr-2 p-1.5 hover:bg-slate-100 dark:hover:bg-dracula-800 rounded-lg text-slate-500 dark:text-dracula-400 transition-colors group focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
         title="Go Back"
         aria-label="Go back"
       >
         <ChevronLeft class="w-5 h-5 group-active:-translate-x-1 transition-transform" />
       </button>
-      <Breadcrumbs :path="currentPath" @navigate="handleNavigate" class="flex-1 border-none bg-transparent shadow-none px-0 dark:text-slate-300" />
+      <Breadcrumbs :path="currentPath" @navigate="handleNavigate" class="flex-1 border-none bg-transparent shadow-none px-0 dark:text-dracula-300" />
     </div>
 
     <!-- Main Content Area -->
     <main class="flex-1 relative overflow-hidden flex flex-col">
       <!-- State Transitions Overlay -->
       <transition name="fade">
-        <div v-if="showLoading" class="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-slate-950/40 backdrop-blur-[1px] z-10">
-          <div class="flex flex-col items-center gap-4 p-8 bg-white/80 dark:bg-slate-900/80 rounded-3xl shadow-xl border border-white dark:border-slate-800">
+        <div v-if="showLoading" class="absolute inset-0 flex items-center justify-center bg-white/40 dark:bg-dracula-950/40 backdrop-blur-[1px] z-10">
+          <div class="flex flex-col items-center gap-4 p-8 bg-white/80 dark:bg-dracula-900/80 rounded-3xl shadow-xl border border-white dark:border-dracula-800">
             <div class="relative">
               <div class="w-12 h-12 border-4 border-blue-100 dark:border-blue-900/30 rounded-full"></div>
               <div class="w-12 h-12 border-4 border-t-blue-600 rounded-full animate-spin absolute top-0"></div>
             </div>
-            <p class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Accessing VFS</p>
+            <p class="text-xs font-bold text-slate-500 dark:text-dracula-400 uppercase tracking-widest">Accessing VFS</p>
           </div>
         </div>
       </transition>
 
       <!-- Connection Error UI -->
-      <div v-if="error" class="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-slate-950">
-        <div class="max-w-md w-full p-8 bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-slate-800 text-center transform transition-all duration-500 hover:scale-[1.01]">
+      <div v-if="error" class="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-dracula-950">
+        <div class="max-w-md w-full p-8 bg-white dark:bg-dracula-900 rounded-[32px] shadow-2xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-dracula-800 text-center transform transition-all duration-500 hover:scale-[1.01]">
           <div class="w-20 h-20 bg-rose-50 dark:bg-rose-900/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
             <AlertCircle class="w-10 h-10 text-rose-500" />
           </div>
-          <h2 class="text-xl font-black text-slate-800 dark:text-slate-200 mb-3">Service Unavailable</h2>
-          <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm leading-relaxed">The archive engine is currently unreachable. This might be due to a connection drop or server maintenance.</p>
+          <h2 class="text-xl font-black text-slate-800 dark:text-dracula-200 mb-3">Service Unavailable</h2>
+          <p class="text-slate-500 dark:text-dracula-400 mb-8 text-sm leading-relaxed">The archive engine is currently unreachable. This might be due to a connection drop or server maintenance.</p>
           <button @click="() => refetch()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/25 transition-all">
             Reconnect to Engine
           </button>
@@ -557,17 +557,17 @@ onUnmounted(() => {
         
         <!-- Empty State UI -->
         <div v-else-if="!showLoading && !error" class="h-full flex flex-col items-center justify-center p-12 text-center">
-          <div class="w-32 h-32 bg-slate-100 dark:bg-slate-900 rounded-[40px] flex items-center justify-center mb-8 relative">
-            <Search class="w-12 h-12 text-slate-300 dark:text-slate-700" />
-            <div class="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-slate-800 rounded-2xl shadow-sm flex items-center justify-center border border-slate-100 dark:border-slate-700">
-              <div class="w-6 h-1 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
+          <div class="w-32 h-32 bg-slate-100 dark:bg-dracula-900 rounded-[40px] flex items-center justify-center mb-8 relative">
+            <Search class="w-12 h-12 text-slate-300 dark:text-dracula-700" />
+            <div class="absolute -bottom-2 -right-2 w-12 h-12 bg-white dark:bg-dracula-800 rounded-2xl shadow-sm flex items-center justify-center border border-slate-100 dark:border-dracula-700">
+              <div class="w-6 h-1 bg-slate-200 dark:bg-dracula-700 rounded-full"></div>
             </div>
           </div>
-          <h3 class="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">No items found</h3>
-          <p class="text-slate-400 dark:text-slate-500 text-sm max-w-[240px] leading-relaxed">We couldn't find anything matching your request in this directory.</p>
+          <h3 class="text-lg font-bold text-slate-700 dark:text-dracula-300 mb-2">No items found</h3>
+          <p class="text-slate-400 dark:text-dracula-500 text-sm max-w-[240px] leading-relaxed">We couldn't find anything matching your request in this directory.</p>
           <button 
             @click="handleNavigate('/')"
-            class="mt-8 px-6 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+            class="mt-8 px-6 py-2.5 bg-white dark:bg-dracula-800 border border-slate-200 dark:border-dracula-700 text-slate-600 dark:text-dracula-400 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-dracula-700 transition-colors"
           >
             Back to Library
           </button>
@@ -607,7 +607,7 @@ onUnmounted(() => {
               </div>
               <div class="truncate text-left">
                 <h4 class="text-white text-sm font-bold truncate">{{ previewItem.name }}</h4>
-                <p class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-wider">{{ (previewItem.size / 1024 / 1024).toFixed(2) }} MB</p>
+                <p class="text-[10px] text-slate-400 dark:text-dracula-500 font-bold uppercase tracking-wider">{{ (previewItem.size / 1024 / 1024).toFixed(2) }} MB</p>
               </div>
             </div>
             
@@ -658,15 +658,15 @@ onUnmounted(() => {
               <div v-else-if="previewItem.capabilities & CAP_EDIT" :key="previewItem.path + '-t'" class="w-full max-w-5xl h-full bg-slate-900 dark:bg-black/40 rounded-2xl border border-white/10 dark:border-white/5 overflow-hidden flex flex-col shadow-2xl">
                 <div class="px-4 py-3 bg-white/5 border-b border-white/10 flex items-center justify-between">
                   <div class="flex items-center gap-2">
-                    <FileText class="w-4 h-4 text-slate-400 dark:text-slate-500" />
-                    <span class="text-xs font-bold text-slate-300 dark:text-slate-400 uppercase tracking-widest">Document Preview</span>
+                    <FileText class="w-4 h-4 text-slate-400 dark:text-dracula-500" />
+                    <span class="text-xs font-bold text-slate-300 dark:text-dracula-400 uppercase tracking-widest">Document Preview</span>
                   </div>
                   <div v-if="isTextLoading" class="flex items-center gap-2">
                     <Loader2 class="w-3 h-3 text-blue-500 animate-spin" />
-                    <span class="text-[10px] text-slate-500 dark:text-slate-600 font-bold uppercase tracking-tighter">Loading content...</span>
+                    <span class="text-[10px] text-slate-500 dark:text-dracula-600 font-bold uppercase tracking-tighter">Loading content...</span>
                   </div>
                 </div>
-                <div class="flex-1 overflow-auto p-6 sm:p-10 font-mono text-sm leading-relaxed text-slate-300 dark:text-slate-400 selection:bg-blue-500/30">
+                <div class="flex-1 overflow-auto p-6 sm:p-10 font-mono text-sm leading-relaxed text-slate-300 dark:text-dracula-400 selection:bg-blue-500/30">
                   <pre v-if="textContent" class="whitespace-pre-wrap break-all text-left">{{ textContent }}</pre>
                   <div v-else-if="isTextLoading" class="h-full flex items-center justify-center">
                     <div class="space-y-4 w-full max-w-md">
@@ -682,10 +682,10 @@ onUnmounted(() => {
               <!-- Fallback Stage -->
               <div v-else :key="'fallback'" class="p-12 bg-white/5 rounded-3xl border border-white/10 text-center max-w-sm">
                 <div class="w-20 h-20 bg-white/10 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <AlertCircle class="w-10 h-10 text-slate-400 dark:text-slate-500" />
+                  <AlertCircle class="w-10 h-10 text-slate-400 dark:text-dracula-500" />
                 </div>
                 <h3 class="text-white font-bold text-lg mb-2">No Preview</h3>
-                <p class="text-slate-400 dark:text-slate-500 text-xs mb-8 leading-relaxed">This file type requires external software to view. You can download the raw data below.</p>
+                <p class="text-slate-400 dark:text-dracula-500 text-xs mb-8 leading-relaxed">This file type requires external software to view. You can download the raw data below.</p>
                 <a 
                   :href="getRawUrl(previewItem.path, true)" 
                   class="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-2xl text-xs font-bold transition-all shadow-lg shadow-blue-600/20"
