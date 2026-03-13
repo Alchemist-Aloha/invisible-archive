@@ -31,9 +31,15 @@ func PeelPath(basePath, requestPath string) (*PathResult, error) {
 			ext := strings.ToLower(filepath.Ext(current))
 			isZip := !info.IsDir() && ext == ".zip"
 			
+			virtualPath := filepath.Join(virtualSegments...)
+			if virtualPath != "" {
+				// Don't prepend slash, just keep the joined segments, it's relative
+				virtualPath = virtualPath
+			}
+
 			res := &PathResult{
 				PhysicalPath: current,
-				VirtualPath:  "/" + filepath.Join(virtualSegments...),
+				VirtualPath:  virtualPath,
 				IsArchive:    isZip,
 			}
 			log.Printf("VFS: Found physical match: %s (IsArchive: %v, Virtual: %s)", current, isZip, res.VirtualPath)
