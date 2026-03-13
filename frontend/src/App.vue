@@ -23,7 +23,10 @@ import 'plyr/dist/plyr.css';
 // Path state with URL and localStorage sync
 const getInitialPath = () => {
   const hash = window.location.hash.slice(1);
-  if (hash) return decodeURIComponent(hash);
+  if (hash) {
+    const decoded = decodeURIComponent(hash);
+    return decoded.startsWith('/') ? decoded : '/' + decoded;
+  }
   return localStorage.getItem('lastPath') || '/';
 };
 
@@ -58,9 +61,29 @@ onMounted(() => {
 
   window.addEventListener('keydown', handleKeydown);
 
-  // Update URL if missing on load
-  if (!window.location.hash && currentPath.value !== '/') {
-    history.replaceState({ path: currentPath.value }, '', '#' + encodeURIComponent(currentPath.value));
+  // Build history stack if we started at a deep path
+  // This allows mobile "back" swipe to move to parent instead of closing the app
+  const startPath = currentPath.value;
+  if (startPath !== '/') {
+    const segments = startPath.split('/').filter(Boolean);
+    let cumulative = '';
+    
+    // Replace current entry with root
+    history.replaceState({ path: '/' }, '', '#/');
+    
+    // Push parents
+    for (let i = 0; i < segments.length - 1; i++) {
+      cumulative += '/' + segments[i];
+      history.pushState({ path: cumulative }, '', '#' + encodeURIComponent(cumulative));
+    }
+    
+    // Push the actual current path
+    history.pushState({ path: startPath }, '', '#' + encodeURIComponent(startPath));
+  } else {
+    // Just ensure the hash is correct for root
+    if (!window.location.hash) {
+      history.replaceState({ path: '/' }, '', '#/');
+    }
   }
 });
 
@@ -227,6 +250,9 @@ onUnmounted(() => {
             Archive
           </h1>
           <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">Invisible</p>
+        </div>
+        <div v-if="displayItems" class="min-[480px]:hidden flex flex-col justify-center">
+          <span class="text-[10px] font-black text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-md leading-none">{{ displayItems.length }}</span>
         </div>
       </div>
       

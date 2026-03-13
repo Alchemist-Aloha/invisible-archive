@@ -53,12 +53,14 @@ const columns = computed(() => {
 
 const rowCount = computed(() => Math.ceil(props.items.length / columns.value));
 
-const virtualizer = useVirtualizer({
-  count: rowCount.value,
-  getScrollElement: () => containerRef.value,
-  estimateSize: () => 180,
-  overscan: 5,
-});
+const virtualizer = useVirtualizer(
+  computed(() => ({
+    count: rowCount.value,
+    getScrollElement: () => containerRef.value,
+    estimateSize: () => 150,
+    overscan: 20,
+  }))
+);
 
 const getRowItems = (rowIndex: number) => {
   const start = rowIndex * columns.value;
@@ -82,8 +84,15 @@ const handleThumbError = (path: string) => {
 <template>
   <div 
     ref="containerRef" 
-    class="h-full overflow-y-auto overflow-x-hidden p-2 sm:p-6 bg-gray-50/30"
+    class="h-full overflow-y-auto overflow-x-hidden p-2 sm:p-6 bg-gray-50/30 relative"
   >
+    <!-- Item Count Badge -->
+    <div v-if="items.length > 0" class="absolute top-2 right-4 z-10">
+      <span class="px-2 py-1 bg-white/80 backdrop-blur border border-slate-200 rounded-lg text-[10px] font-bold text-slate-400 shadow-sm uppercase tracking-wider">
+        {{ items.length }} items
+      </span>
+    </div>
+
     <div
       :style="{
         height: `${virtualizer.getTotalSize()}px`,
