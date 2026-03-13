@@ -76,9 +76,6 @@ This document summarizes the technology stack selected in this project and the k
 - PhotoSwipe v5
   - Highlight: high-performance image gallery with gesture-friendly navigation.
 
-- Plyr
-  - Highlight: modern media player UI for streamed video playback.
-
 - lucide-vue-next
   - Highlight: consistent icon set across navigation and file-type affordances.
 

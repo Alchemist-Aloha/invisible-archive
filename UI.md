@@ -26,10 +26,10 @@ This document tracks the aesthetic decisions, layout optimizations, and accessib
 
 ## 3. Interactive Features
 
-### Video Player (Plyr Integration)
-*   **Drag-to-Seek:** Robust horizontal drag/swipe gestures on the video surface allow for high-precision seeking.
+### Video Player (Native HTML5)
+*   **Drag-to-Seek:** Robust horizontal drag/swipe gestures on the video surface allow for high-precision seeking directly on the native video element.
 *   **Seek Overlay:** An immersive, centered UI overlay appears during seeking, showing the time delta (e.g., `+15s`) and current progress.
-*   **Refined Controls:** Custom-styled Plyr controls that match the Dracula theme.
+*   **Auto-Play Integration:** Videos automatically begin playing smoothly upon opening or navigating between items.
 
 ### Image Viewer (PhotoSwipe v5)
 *   **Integrated History:** Opening an image pushes a state to the browser history, allowing the "Back" button or gesture to close the gallery naturally.
@@ -57,7 +57,7 @@ Based on comprehensive Playwright UI testing, the following areas have been iden
 ### Mobile Experience
 *   **Navigation Discoverability:** "Next" and "Prev" navigation buttons in the preview stage are hidden on mobile screens. We should consider adding explicit, translucent, floating tap zones on the screen edges for users who may not discover the swipe gesture.
 *   **Layout Cycler Feedback:** The "Cycle layout" button on mobile swaps icons without textual feedback. Adding a small transient toast notification (e.g., "Grid View", "List View") upon tapping would enhance clarity.
-*   **Scrubbing Precision:** The Plyr progress bar is thin and can be difficult to scrub accurately on mobile devices. Adding a custom CSS override to increase the height of the `plyr__progress` touch target would improve usability.
+*   **Scrubbing Precision:** Native mobile video player progress bars are often thin and can be difficult to scrub accurately. While drag-to-seek helps mitigate this, further custom UI controls might be needed if precision remains an issue.
 
 ### Desktop Layout & Accessibility
 *   **Empty States:** Completely empty folders currently display a blank background. Introducing a friendly illustration or clear "This folder is empty" state would provide better user context.
