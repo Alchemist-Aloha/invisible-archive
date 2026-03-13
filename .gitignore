@@ -8,7 +8,6 @@ server
 *.dylib
 
 # Go
-go.sum
 vendor/
 
 # Node / Frontend
