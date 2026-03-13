@@ -139,6 +139,7 @@ const handleThumbError = (path: string) => {
             @click="handleItemClick(item)"
             class="flex flex-col items-center p-2 rounded-2xl hover:bg-white dark:hover:bg-dracula-600/50 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 cursor-pointer w-28 sm:w-36 group border border-transparent hover:border-blue-100/50 dark:hover:border-dracula-purple/30 focus-visible:ring-2 focus-visible:ring-blue-500/50 dark:focus-visible:ring-dracula-purple/50 outline-none text-left shrink-0"
             :data-pswp-src="(item.capabilities & CAP_RENDER) && !item.name.toLowerCase().endsWith('.pdf') ? getRawUrl(item.path) : undefined"
+            :aria-label="'Open ' + item.name"
           >
             <div class="relative w-20 h-20 sm:w-28 sm:h-28 bg-white dark:bg-dracula-800 rounded-2xl shadow-sm overflow-hidden flex items-center justify-center group-hover:scale-[1.02] group-active:scale-95 transition-transform duration-300 ring-1 ring-black/5 dark:ring-white/5 shrink-0">
               <!-- Thumbnail with fallback -->
@@ -187,6 +188,7 @@ const handleThumbError = (path: string) => {
             @click="handleItemClick(item)"
             class="flex items-center px-4 sm:px-8 py-2 hover:bg-white dark:hover:bg-dracula-600/20 transition-all duration-200 cursor-pointer group border-b border-transparent hover:border-slate-100 dark:hover:border-dracula-600/30 focus-visible:ring-2 focus-visible:ring-blue-500/50 dark:focus-visible:ring-dracula-purple/50 outline-none w-full text-left"
             :data-pswp-src="(item.capabilities & CAP_RENDER) && !item.name.toLowerCase().endsWith('.pdf') ? getRawUrl(item.path) : undefined"
+            :aria-label="'Open ' + item.name"
           >
             <div class="w-8 h-8 flex-shrink-0 mr-4">
               <FileIcon :name="item.name" :isDir="item.is_dir" :capabilities="item.capabilities" />
