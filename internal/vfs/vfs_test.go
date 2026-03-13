@@ -72,12 +72,75 @@ func TestManager(t *testing.T) {
 		defer closer.Close()
 
 		data := make([]byte, 18)
-		_, err = reader.Read(data)
+		n, err := reader.Read(data)
+		if err != nil && err.Error() != "EOF" {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if string(data[:n]) != "content inside zip" {
+			t.Errorf("expected 'content inside zip', got '%s'", string(data[:n]))
+		}
+	})
+
+	t.Run("Seek inside ZIP", func(t *testing.T) {
+		reader, closer, err := mgr.GetRawReader("archive.zip/inner/hello.txt")
 		if err != nil {
 			t.Fatal(err)
 		}
-		if string(data) != "content inside zip" {
-			t.Errorf("expected 'content inside zip', got '%s'", string(data))
+		defer closer.Close()
+
+		// Read first 7 bytes ("content")
+		data := make([]byte, 7)
+		n, err := reader.Read(data)
+		if err != nil && err.Error() != "EOF" {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if string(data[:n]) != "content" {
+			t.Errorf("expected 'content', got '%s'", string(data[:n]))
+		}
+
+		// Seek to "zip" (offset 15)
+		newOffset, err := reader.Seek(15, 0) // SeekStart
+		if err != nil {
+			t.Fatal(err)
+		}
+		if newOffset != 15 {
+			t.Errorf("expected offset 15, got %d", newOffset)
+		}
+
+		data = make([]byte, 3)
+		n, err = reader.Read(data)
+		if err != nil && err.Error() != "EOF" {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if string(data[:n]) != "zip" {
+			t.Errorf("expected 'zip', got '%s'", string(data[:n]))
+		}
+
+		// Seek back to "inside" (offset 8)
+		newOffset, err = reader.Seek(8, 0) // SeekStart
+		if err != nil {
+			t.Fatal(err)
+		}
+		if newOffset != 8 {
+			t.Errorf("expected offset 8, got %d", newOffset)
+		}
+
+		data = make([]byte, 6)
+		n, err = reader.Read(data)
+		if err != nil && err.Error() != "EOF" {
+			t.Fatalf("unexpected err: %v", err)
+		}
+		if string(data[:n]) != "inside" {
+			t.Errorf("expected 'inside', got '%s'", string(data[:n]))
+		}
+
+		// Seek to end
+		newOffset, err = reader.Seek(0, 2) // SeekEnd
+		if err != nil {
+			t.Fatal(err)
+		}
+		if newOffset != 18 {
+			t.Errorf("expected offset 18, got %d", newOffset)
 		}
 	})
 }

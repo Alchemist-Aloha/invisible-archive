@@ -2,7 +2,6 @@ package vfs
 
 import (
 	"archive/zip"
-	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -214,22 +213,11 @@ func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
 	vPath := strings.Trim(filepath.ToSlash(res.VirtualPath), "/")
 	for _, f := range ca.Reader.File {
 		if strings.Trim(f.Name, "/") == vPath {
-			rc, err := f.Open()
-			if err != nil {
-				ca.Close()
-				return nil, nil, err
+			zs := &zipStreamSeeker{
+				f:  f,
+				ca: ca,
 			}
-			defer rc.Close()
-
-			// Buffer ZIP entry to support seeking (needed for ServeContent)
-			b, err := io.ReadAll(rc)
-			if err != nil {
-				ca.Close()
-				return nil, nil, err
-			}
-			rs := bytes.NewReader(b)
-
-			return &zipReadSeeker{rs: rs, ca: ca}, &zipReadSeeker{rs: rs, ca: ca}, nil
+			return zs, zs, nil
 		}
 	}
 
@@ -237,18 +225,81 @@ func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
 	return nil, nil, os.ErrNotExist
 }
 
-type zipReadSeeker struct {
-	rs io.ReadSeeker
-	ca *CachedArchive
+type zipStreamSeeker struct {
+	f      *zip.File
+	ca     *CachedArchive
+	rc     io.ReadCloser
+	offset int64
 }
 
-func (z *zipReadSeeker) Read(p []byte) (n int, err error) { return z.rs.Read(p) }
-func (z *zipReadSeeker) Close() error {
-	z.ca.Close()
-	return nil
+func (z *zipStreamSeeker) Read(p []byte) (n int, err error) {
+	if z.rc == nil {
+		rc, err := z.f.Open()
+		if err != nil {
+			return 0, err
+		}
+		z.rc = rc
+		if z.offset > 0 {
+			if _, err := io.CopyN(io.Discard, z.rc, z.offset); err != nil {
+				return 0, err
+			}
+		}
+	}
+	n, err = z.rc.Read(p)
+	z.offset += int64(n)
+	return n, err
 }
-func (z *zipReadSeeker) Seek(offset int64, whence int) (int64, error) {
-	return z.rs.Seek(offset, whence)
+
+func (z *zipStreamSeeker) Seek(offset int64, whence int) (int64, error) {
+	var newOffset int64
+	switch whence {
+	case io.SeekStart:
+		newOffset = offset
+	case io.SeekCurrent:
+		newOffset = z.offset + offset
+	case io.SeekEnd:
+		newOffset = int64(z.f.UncompressedSize64) + offset
+	default:
+		return 0, fmt.Errorf("invalid whence: %d", whence)
+	}
+
+	if newOffset < 0 {
+		return 0, fmt.Errorf("negative seek offset")
+	}
+
+	if newOffset == z.offset {
+		return newOffset, nil
+	}
+
+	// Optimization: if we are seeking forward and have an open reader, we can just discard bytes
+	if newOffset > z.offset && z.rc != nil {
+		discard := newOffset - z.offset
+		n, err := io.CopyN(io.Discard, z.rc, discard)
+		z.offset += n
+		if err != nil {
+			return z.offset, err
+		}
+		return z.offset, nil
+	}
+
+	z.offset = newOffset
+	if z.rc != nil {
+		z.rc.Close()
+		z.rc = nil
+	}
+
+	return z.offset, nil
+}
+
+func (z *zipStreamSeeker) Close() error {
+	var err error
+	if z.rc != nil {
+		err = z.rc.Close()
+	}
+	if caErr := z.ca.Close(); caErr != nil && err == nil {
+		err = caErr
+	}
+	return err
 }
 
 type zipFile struct {
