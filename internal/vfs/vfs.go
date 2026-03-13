@@ -213,6 +213,29 @@ func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
 	vPath := strings.Trim(filepath.ToSlash(res.VirtualPath), "/")
 	for _, f := range ca.Reader.File {
 		if strings.Trim(f.Name, "/") == vPath {
+			if f.Method == zip.Store {
+				relPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
+				osFile, err := m.osFs.Open(relPath)
+				if err != nil {
+					ca.Close()
+					return nil, nil, err
+				}
+
+				off, err := f.DataOffset()
+				if err != nil {
+					osFile.Close()
+					ca.Close()
+					return nil, nil, err
+				}
+
+				ss := &storeStreamSeeker{
+					sr: io.NewSectionReader(osFile, off, int64(f.UncompressedSize64)),
+					osFile: osFile,
+					ca: ca,
+				}
+				return ss, ss, nil
+			}
+
 			zs := &zipStreamSeeker{
 				f:  f,
 				ca: ca,
@@ -223,6 +246,31 @@ func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
 
 	ca.Close()
 	return nil, nil, os.ErrNotExist
+}
+
+type storeStreamSeeker struct {
+	sr     *io.SectionReader
+	osFile afero.File
+	ca     *CachedArchive
+}
+
+func (s *storeStreamSeeker) Read(p []byte) (n int, err error) {
+	return s.sr.Read(p)
+}
+
+func (s *storeStreamSeeker) Seek(offset int64, whence int) (int64, error) {
+	return s.sr.Seek(offset, whence)
+}
+
+func (s *storeStreamSeeker) Close() error {
+	var err error
+	if s.osFile != nil {
+		err = s.osFile.Close()
+	}
+	if caErr := s.ca.Close(); caErr != nil && err == nil {
+		err = caErr
+	}
+	return err
 }
 
 type zipStreamSeeker struct {
