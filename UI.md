@@ -48,3 +48,18 @@ This document tracks the aesthetic decisions, layout optimizations, and accessib
 *   **Semantic HTML:** Items are rendered as `<button type="button">` to support native keyboard focus and activation.
 *   **Focus States:** High-visibility focus rings (`focus-visible:ring-2`) use the theme's accent colors.
 *   **PWA Ready:** Full manifest and multi-size icon support for high-quality "Add to Home Screen" experiences on iOS and Android.
+
+---
+
+## 6. Identified Areas for Improvement (UI Audit)
+Based on comprehensive Playwright UI testing, the following areas have been identified for future refinement:
+
+### Mobile Experience
+*   **Navigation Discoverability:** "Next" and "Prev" navigation buttons in the preview stage are hidden on mobile screens. We should consider adding explicit, translucent, floating tap zones on the screen edges for users who may not discover the swipe gesture.
+*   **Layout Cycler Feedback:** The "Cycle layout" button on mobile swaps icons without textual feedback. Adding a small transient toast notification (e.g., "Grid View", "List View") upon tapping would enhance clarity.
+*   **Scrubbing Precision:** The Plyr progress bar is thin and can be difficult to scrub accurately on mobile devices. Adding a custom CSS override to increase the height of the `plyr__progress` touch target would improve usability.
+
+### Desktop Layout & Accessibility
+*   **Empty States:** Completely empty folders currently display a blank background. Introducing a friendly illustration or clear "This folder is empty" state would provide better user context.
+*   **Ultra-Wide Screens:** At `xl` and `2xl` breakpoints, grid items can appear overly spread out. Implementing a `max-w-7xl` container or increasing the column count on larger screens would optimize horizontal space utilization.
+*   **Active State Contrast:** Ensure the active state for layout selection buttons (currently `bg-white text-blue-600` vs `text-slate-400`) meets WCAG AA contrast standards, particularly in dark mode.
