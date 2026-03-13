@@ -514,6 +514,11 @@ onUnmounted(() => {
         <ChevronLeft class="w-5 h-5 group-active:-translate-x-1 transition-transform" />
       </button>
       <Breadcrumbs :path="currentPath" @navigate="handleNavigate" class="flex-1 border-none bg-transparent shadow-none px-0 dark:text-slate-300" />
+      <div v-if="displayItems && displayItems.length > 0" class="ml-auto pl-4 shrink-0">
+        <span class="px-2 py-1 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold text-slate-400 dark:text-slate-500 shadow-sm uppercase tracking-wider">
+          {{ displayItems.length }} items
+        </span>
+      </div>
     </div>
 
     <!-- Main Content Area -->

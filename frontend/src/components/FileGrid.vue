@@ -106,13 +106,6 @@ const handleThumbError = (path: string) => {
     id="file-grid"
     class="h-full overflow-y-auto overflow-x-hidden p-1 sm:p-6 bg-gray-50/30 dark:bg-slate-950/30 relative transition-colors duration-300"
   >
-    <!-- Item Count Badge (More stable on mobile) -->
-    <div v-if="items.length > 0" class="flex justify-end px-4 py-2 sticky top-0 z-10 pointer-events-none">
-      <span class="px-2 py-1 bg-white/90 dark:bg-slate-800/90 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-lg text-[10px] font-bold text-slate-400 dark:text-slate-500 shadow-sm uppercase tracking-wider pointer-events-auto">
-        {{ items.length }} items
-      </span>
-    </div>
-
     <div
       :style="{
         height: `${virtualizer.getTotalSize()}px`,
