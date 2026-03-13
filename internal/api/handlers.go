@@ -24,6 +24,11 @@ type FileItem struct {
 	Capabilities uint32 `json:"capabilities"`
 }
 
+type ListResponse struct {
+	Items         []FileItem `json:"items"`
+	EffectivePath string     `json:"effective_path"`
+}
+
 type Handler struct {
 	vfs *vfs.Manager
 }
@@ -39,19 +44,19 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("API: Listing path: %s", requestPath)
 
-	files, err := h.vfs.ReadDir(requestPath)
+	files, effectivePath, err := h.vfs.ReadDir(requestPath)
 	if err != nil {
 		log.Printf("API: Error listing path %s: %v", requestPath, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	log.Printf("API: Found %d items in %s", len(files), requestPath)
+	log.Printf("API: Found %d items in %s (Effective: %s)", len(files), requestPath, effectivePath)
 
 	items := make([]FileItem, 0, len(files))
 	for _, f := range files {
 		items = append(items, FileItem{
 			Name:         f.Name(),
-			Path:         path.Join(requestPath, f.Name()),
+			Path:         path.Join(effectivePath, f.Name()),
 			IsDir:        f.IsDir(),
 			Size:         f.Size(),
 			ModTime:      f.ModTime().Unix(),
@@ -60,7 +65,10 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(items)
+	json.NewEncoder(w).Encode(ListResponse{
+		Items:         items,
+		EffectivePath: effectivePath,
+	})
 }
 
 func (h *Handler) Raw(w http.ResponseWriter, r *http.Request) {

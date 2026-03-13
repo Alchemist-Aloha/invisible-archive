@@ -9,6 +9,11 @@ export interface FileItem {
   capabilities: number;
 }
 
+export interface ListResponse {
+  items: FileItem[];
+  effective_path: string;
+}
+
 export const CAP_BROWSE = 1;
 export const CAP_STREAM = 2;
 export const CAP_RENDER = 4;
@@ -18,8 +23,8 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api',
 });
 
-export const fetchList = async (path: string): Promise<FileItem[]> => {
-  const { data } = await api.get<FileItem[]>('/ls', { params: { path } });
+export const fetchList = async (path: string): Promise<ListResponse> => {
+  const { data } = await api.get<ListResponse>('/ls', { params: { path } });
   return data;
 };
 

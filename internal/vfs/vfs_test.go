@@ -31,25 +31,29 @@ func TestManager(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	t.Run("List ZIP as directory", func(t *testing.T) {
-		files, err := mgr.ReadDir("archive.zip")
+	t.Run("List ZIP as directory (Auto-enter single folder)", func(t *testing.T) {
+		files, effectivePath, err := mgr.ReadDir("archive.zip")
 		if err != nil {
 			t.Errorf("ReadDir(archive.zip) error: %v", err)
 		} else {
+			// ZIP contains only "inner/" so it should auto-enter it
+			if effectivePath != "archive.zip/inner" {
+				t.Errorf("expected effective path 'archive.zip/inner', got '%s'", effectivePath)
+			}
 			found := false
 			for _, fi := range files {
-				if fi.Name() == "inner" && fi.IsDir() {
+				if fi.Name() == "hello.txt" {
 					found = true
 				}
 			}
 			if !found {
-				t.Error("expected to find 'inner' directory inside zip root")
+				t.Error("expected to find 'hello.txt' inside zip root (via auto-enter)")
 			}
 		}
 	})
 
 	t.Run("List inner directory inside ZIP", func(t *testing.T) {
-		files, err := mgr.ReadDir("archive.zip/inner")
+		files, _, err := mgr.ReadDir("archive.zip/inner")
 		if err != nil {
 			t.Fatal(err)
 		}

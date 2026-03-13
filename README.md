@@ -10,19 +10,22 @@ Invisible Archive is a high-performance, self-hosted file management system desi
 ## 🚀 Key Features
 
 - **Transparent Archive Browsing:** Navigate `.zip` files as if they were standard folders. The "Path Peeler" algorithm seamlessly resolves virtual paths.
+- **Auto-Enter Archives:** Automatically navigates into archives containing a single root folder, eliminating redundant clicks.
 - **NAS-Optimized Performance:** 
     - **Reference-Counted LRU Cache:** Keeps frequently accessed archives "warm" while strictly protecting system memory.
     - **Hybrid Indexing:** Instant search (<5ms for 1M files) using SQLite FTS5. Indexing is lazy and opportunistic to minimize disk IO.
 - **High-Performance Streaming:** Native support for HTTP Range requests (206 Partial Content), allowing for $O(1)$ seeking in videos and large media files.
+- **Multi-Layout Engine:** Choose between **Grid** (large thumbnails), **List** (compact), or **Details** (list with metadata) views.
+- **Global Dark Mode:** Full dark mode support with a single toggle, respecting system preferences and persistent storage.
 - **Smart Image Pipeline:** Throttled, pure-Go thumbnail generation with a "Fast Identity" cache system to prevent NAS CPU spikes.
-- **Mobile-First Experience:** PWA-ready with native-like touch gestures, including pinch-to-zoom, dynamic panning, and history-aware back navigation.
-- **Modern UI:** Responsive "Finder-style" interface built with Vue 3, featuring virtual scrolling for directories with 100,000+ items.
+- **Mobile-First Experience:** Fully **installable PWA** with multi-size icon support and native-like touch gestures, including pinch-to-zoom and mobile-optimized video controls.
+- **Modern UI:** Responsive "Finder-style" interface built with Vue 3 and Tailwind CSS v4, featuring virtual scrolling for directories with 100,000+ items.
 
 ## 🛠 Tech Stack
 
 ### Backend (Go)
 - **VFS:** `afero` for unified filesystem abstraction.
-- **Routing:** `chi` for minimalist, standard-compatible routing.
+- **Routing:** `chi` with auto-unescaping for special character support (`[]`, spaces, etc).
 - **Database:** Pure-Go `SQLite` with `sqlc` for type-safe queries.
 - **Imaging:** `disintegration/imaging` for portable, CGO-free processing.
 
@@ -30,7 +33,8 @@ Invisible Archive is a high-performance, self-hosted file management system desi
 - **State Management:** `TanStack Query` for robust server-state synchronization.
 - **Virtualization:** `TanStack Virtual` for high-density list rendering.
 - **Image Viewer:** `PhotoSwipe v5` for high-performance, gesture-driven browsing.
-- **Styling:** `Tailwind CSS v4` + `Lucide` icons.
+- **Video Player:** `Plyr` with mobile-optimized progress controls.
+- **Styling:** `Tailwind CSS v4` with class-based dark mode.
 
 ## 📦 Deployment
 
@@ -68,7 +72,7 @@ The easiest way to run Invisible Archive is via Docker Compose.
 2. **Frontend:**
    ```bash
    cd frontend
-   npm install
+   npm install --legacy-peer-deps
    npm run dev
    ```
 

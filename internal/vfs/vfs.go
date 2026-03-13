@@ -105,11 +105,11 @@ func (m *Manager) Stat(path string) (os.FileInfo, error) {
 	return f.Stat()
 }
 
-// ReadDir returns a list of directory entries
-func (m *Manager) ReadDir(path string) ([]os.FileInfo, error) {
+// ReadDir returns a list of directory entries and the effective path (might be deeper for ZIPs)
+func (m *Manager) ReadDir(path string) ([]os.FileInfo, string, error) {
 	res, err := PeelPath(m.basePath, path)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if !res.IsArchive {
@@ -117,12 +117,13 @@ func (m *Manager) ReadDir(path string) ([]os.FileInfo, error) {
 		if m.indexer != nil {
 			go m.indexer.IndexDirectory(context.Background(), res.PhysicalPath)
 		}
-		return afero.ReadDir(m.osFs, relPath)
+		items, err := afero.ReadDir(m.osFs, relPath)
+		return items, path, err
 	}
 
 	ca, err := m.mountTable.Get(res.PhysicalPath)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer ca.Close()
 
@@ -131,7 +132,22 @@ func (m *Manager) ReadDir(path string) ([]os.FileInfo, error) {
 		go m.indexer.IndexZip(context.Background(), res.PhysicalPath, relZipPath)
 	}
 
-	return m.readZipDir(ca.Reader, res.VirtualPath)
+	// Auto-enter logic
+	effectiveVPath := res.VirtualPath
+	for {
+		items, _ := m.readZipDir(ca.Reader, effectiveVPath)
+		if len(items) == 1 && items[0].IsDir() && res.VirtualPath == "" {
+			// Only auto-enter if we are at the root of the ZIP and there is exactly one folder
+			effectiveVPath = filepath.ToSlash(filepath.Join(effectiveVPath, items[0].Name()))
+			continue
+		}
+		break
+	}
+
+	finalItems, err := m.readZipDir(ca.Reader, effectiveVPath)
+	relZipPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
+	effectivePath := filepath.ToSlash(filepath.Join(relZipPath, effectiveVPath))
+	return finalItems, effectivePath, err
 }
 
 func (m *Manager) readZipDir(r *zip.ReadCloser, vPath string) ([]os.FileInfo, error) {

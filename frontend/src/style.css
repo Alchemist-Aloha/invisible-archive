@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
   
@@ -22,13 +24,22 @@
   font-weight: 400;
 
   color-scheme: light dark;
-  color: #1f2937;
-  background-color: #f9fafb;
+  --bg-primary: #f9fafb;
+  --text-primary: #1f2937;
+  --scrollbar-thumb: #e5e7eb;
+  --scrollbar-thumb-hover: #d1d5db;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.dark {
+  --bg-primary: #0f172a;
+  --text-primary: #f1f5f9;
+  --scrollbar-thumb: #334155;
+  --scrollbar-thumb-hover: #475569;
 }
 
 body {
@@ -37,6 +48,9 @@ body {
   place-content: center;
   min-width: 320px;
   min-height: 100vh;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: background-color 0.3s, color 0.3s;
 }
 
 #app {
@@ -54,12 +68,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #e5e7eb;
+  background: var(--scrollbar-thumb);
   border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #d1d5db;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Transitions */

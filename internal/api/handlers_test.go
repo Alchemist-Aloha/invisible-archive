@@ -2,6 +2,7 @@ package api
 
 import (
 	"archive/zip"
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -53,29 +54,23 @@ func TestRawHandlerSpecialCharacters(t *testing.T) {
 	}
 }
 
-func TestRawHandlerSpecialCharactersInZip(t *testing.T) {
+func TestListHandlerAutoEnterZip(t *testing.T) {
 	// Setup temporary library with a ZIP
-	tempDir, err := os.MkdirTemp("", "archive-test-zip-*")
+	tempDir, err := os.MkdirTemp("", "archive-test-list-*")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer os.RemoveAll(tempDir)
 
-	// Create a real zip file for testing
+	// Create a zip file with single folder root: test.zip/folder/file.txt
 	zipPath := filepath.Join(tempDir, "test.zip")
 	f, err := os.Create(zipPath)
 	if err != nil {
 		t.Fatal(err)
 	}
 	zw := zip.NewWriter(f)
-	
-	innerFileName := "inner [video].txt"
-	content := "inner content"
-	zf, err := zw.Create(innerFileName)
-	if err != nil {
-		t.Fatal(err)
-	}
-	zf.Write([]byte(content))
+	zf, _ := zw.Create("folder/file.txt")
+	zf.Write([]byte("content"))
 	zw.Close()
 	f.Close()
 
@@ -87,20 +82,29 @@ func TestRawHandlerSpecialCharactersInZip(t *testing.T) {
 
 	h := NewHandler(mgr)
 	r := chi.NewRouter()
-	r.Get("/raw/*", h.Raw)
+	r.Get("/ls", h.List)
 
-	// Test with encoded path inside zip
-	encodedPath := "/raw/test.zip/inner%20%5Bvideo%5D.txt"
-	req := httptest.NewRequest("GET", encodedPath, nil)
+	// List the zip root
+	req := httptest.NewRequest("GET", "/ls?path=test.zip", nil)
 	w := httptest.NewRecorder()
 
 	r.ServeHTTP(w, req)
 
 	if w.Code != http.StatusOK {
-		t.Errorf("Expected status OK, got %v", w.Code)
+		t.Fatalf("Expected status OK, got %v", w.Code)
 	}
 
-	if w.Body.String() != content {
-		t.Errorf("Expected body %q, got %q", content, w.Body.String())
+	// Verify it auto-entered 'folder'
+	var resp ListResponse
+	if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
+		t.Fatal(err)
+	}
+
+	if resp.EffectivePath != "test.zip/folder" {
+		t.Errorf("Expected effective path 'test.zip/folder', got '%s'", resp.EffectivePath)
+	}
+
+	if len(resp.Items) != 1 || resp.Items[0].Name != "file.txt" {
+		t.Errorf("Expected 1 item 'file.txt', got %v", resp.Items)
 	}
 }
