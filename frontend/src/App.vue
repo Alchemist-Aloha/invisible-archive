@@ -671,7 +671,7 @@ onUnmounted(() => {
               </div>
 
               <!-- Video Stage -->
-              <div v-else-if="previewItem.capabilities & CAP_STREAM" :key="previewItem.path + '-v'" class="w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-black aspect-video">
+              <div v-else-if="previewItem.capabilities & CAP_STREAM" :key="previewItem.path + '-v'" class="w-full h-full flex items-center justify-center rounded-2xl overflow-hidden shadow-2xl bg-black">
                 <video 
                   ref="videoElement"
                   playsinline 
@@ -772,11 +772,11 @@ onUnmounted(() => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.slide-next-enter-from { opacity: 0; transform: translateX(30px); }
-.slide-next-leave-to { opacity: 0; transform: translateX(-30px); }
+.slide-next-enter-from { opacity: 0; transform: translateX(100%); }
+.slide-next-leave-to { opacity: 0; transform: translateX(-100%); }
 
-.slide-prev-enter-from { opacity: 0; transform: translateX(-30px); }
-.slide-prev-leave-to { opacity: 0; transform: translateX(30px); }
+.slide-prev-enter-from { opacity: 0; transform: translateX(-100%); }
+.slide-prev-leave-to { opacity: 0; transform: translateX(100%); }
 
 /* Custom Font Utilities */
 @supports (font-variation-settings: normal) {
