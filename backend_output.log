@@ -1,0 +1,7 @@
+2026/03/13 16:08:58 Server starting on port 8080, serving ./library
+2026/03/13 16:09:26 "GET http://localhost:8080/ HTTP/1.1" from [::1]:45996 - 404 19B in 21.187µs
+2026/03/13 16:10:56 API: Listing path: /
+2026/03/13 16:10:56 VFS: Peeling path. Base: /app/library, Request: /, Full: /app/library
+2026/03/13 16:10:56 VFS: Found physical match: /app/library (IsArchive: false, Virtual: )
+2026/03/13 16:10:56 API: Found 1 items in / (Effective: /)
+2026/03/13 16:10:56 "GET http://localhost:8080/api/ls?path=%2F HTTP/1.1" from [::1]:38488 - 200 145B in 358.92µs
