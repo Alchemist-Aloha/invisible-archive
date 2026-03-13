@@ -71,10 +71,12 @@ const initPlayer = () => {
       controls: [
         'play-large',
         'play',
+        'fast-forward',
         'progress',
         'current-time',
         'mute',
-        'volume',
+        'settings',
+        'pip',
         'fullscreen',
       ],
     });
