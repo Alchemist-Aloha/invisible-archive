@@ -75,6 +75,13 @@ func (idx *Indexer) IndexDirectory(ctx context.Context, physicalPath string) err
 		relParent = ""
 	}
 
+	tx, err := idx.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	qtx := idx.queries.WithTx(tx)
+
 	for _, entry := range entries {
 		info, err := entry.Info()
 		if err != nil {
@@ -86,7 +93,7 @@ func (idx *Indexer) IndexDirectory(ctx context.Context, physicalPath string) err
 		// Use shared capability logic
 		caps := int64(util.GetCapabilities(entry.Name(), info.IsDir()))
 
-		err = idx.queries.UpsertItem(ctx, UpsertItemParams{
+		err = qtx.UpsertItem(ctx, UpsertItemParams{
 			ParentPath:  "/" + relParent,
 			Name:        entry.Name(),
 			Path:        relPath,
@@ -99,6 +106,10 @@ func (idx *Indexer) IndexDirectory(ctx context.Context, physicalPath string) err
 		if err != nil {
 			return err
 		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return err
 	}
 
 	// Start watching this directory
@@ -138,6 +149,13 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 	}
 	defer r.Close()
 
+	tx, err := idx.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	qtx := idx.queries.WithTx(tx)
+
 	for _, f := range r.File {
 		// ZIP paths are always forward-slash separated
 		parts := strings.Split(strings.TrimSuffix(f.Name, "/"), "/")
@@ -154,7 +172,7 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 
 		caps := int64(util.GetCapabilities(name, isDir))
 
-		err = idx.queries.UpsertItem(ctx, UpsertItemParams{
+		err = qtx.UpsertItem(ctx, UpsertItemParams{
 			ParentPath:  parentPath,
 			Name:        name,
 			Path:        fullPath,
@@ -168,5 +186,10 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 			return err
 		}
 	}
+
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
 	return nil
 }
