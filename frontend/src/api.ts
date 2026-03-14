@@ -36,7 +36,8 @@ export const searchFiles = async (q: string): Promise<FileItem[]> => {
 export const getRawUrl = (path: string, download: boolean = false) => {
   // Remove leading slash if present to avoid double slashes after /raw/
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
+  // Use replaceAll instead of split/map/join to avoid multiple array allocations
+  const encodedPath = encodeURIComponent(cleanPath).replaceAll('%2F', '/');
   let url = `${api.defaults.baseURL}/raw/${encodedPath}`;
   if (download) {
     url += '?download=1';
@@ -50,7 +51,8 @@ export const getThumbUrl = (path: string) => {
 
 export const fetchText = async (path: string): Promise<string> => {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
+  // Use replaceAll instead of split/map/join to avoid multiple array allocations
+  const encodedPath = encodeURIComponent(cleanPath).replaceAll('%2F', '/');
   const { data } = await api.get<string>(`/raw/${encodedPath}`, { responseType: 'text' });
   return data;
 };
