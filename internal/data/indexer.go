@@ -138,6 +138,14 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 	}
 	defer r.Close()
 
+	tx, err := idx.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	q := idx.queries.WithTx(tx)
+
 	for _, f := range r.File {
 		// ZIP paths are always forward-slash separated
 		parts := strings.Split(strings.TrimSuffix(f.Name, "/"), "/")
@@ -154,7 +162,7 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 
 		caps := int64(util.GetCapabilities(name, isDir))
 
-		err = idx.queries.UpsertItem(ctx, UpsertItemParams{
+		err = q.UpsertItem(ctx, UpsertItemParams{
 			ParentPath:  parentPath,
 			Name:        name,
 			Path:        fullPath,
@@ -168,5 +176,6 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 			return err
 		}
 	}
-	return nil
+
+	return tx.Commit()
 }
