@@ -3,6 +3,7 @@ package vfs
 import (
 	"archive/zip"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 
@@ -16,6 +17,8 @@ type CachedArchive struct {
 	refs       int32 // Atomic reference counter
 	evicted    bool  // True if removed from LRU cache
 	mu         sync.Mutex
+	Files      map[string]*zip.File
+	Dirs       map[string]bool
 }
 
 // Close decrements the reference count and closes the file if needed
@@ -80,6 +83,29 @@ func (mt *MountTable) Get(path string) (*CachedArchive, error) {
 		Reader: rc,
 		Path:   path,
 		refs:   1, // Initial reference for the caller
+		Files:  make(map[string]*zip.File),
+		Dirs:   make(map[string]bool),
+	}
+
+	for _, f := range ca.Reader.File {
+		fPath := strings.Trim(f.Name, "/")
+
+		if f.FileInfo().IsDir() {
+			ca.Dirs[fPath] = true
+		} else {
+			ca.Files[fPath] = f
+		}
+
+		// Also register all parent directories of this file to handle implicit directories
+		dir := fPath
+		for {
+			idx := strings.LastIndexByte(dir, '/')
+			if idx < 0 {
+				break
+			}
+			dir = dir[:idx]
+			ca.Dirs[dir] = true
+		}
 	}
 
 	mt.cache.Add(path, ca)

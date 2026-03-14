@@ -65,25 +65,23 @@ func (m *Manager) Open(path string) (afero.File, *CachedArchive, error) {
 		return &zipFile{name: "/", isDir: true, ca: ca}, ca, nil
 	}
 
-	for _, f := range ca.Reader.File {
-		fPath := strings.Trim(f.Name, "/")
-		if fPath == vPath {
-			rc, err := f.Open()
-			if err != nil {
-				ca.Close()
-				return nil, nil, err
-			}
-			return &zipFile{
-				name:  filepath.Base(fPath),
-				isDir: f.FileInfo().IsDir(),
-				rc:    rc,
-				ca:    ca,
-				file:  f,
-			}, ca, nil
+	if f, ok := ca.Files[vPath]; ok {
+		rc, err := f.Open()
+		if err != nil {
+			ca.Close()
+			return nil, nil, err
 		}
-		if strings.HasPrefix(fPath, vPath+"/") {
-			return &zipFile{name: filepath.Base(vPath), isDir: true, ca: ca}, ca, nil
-		}
+		return &zipFile{
+			name:  filepath.Base(vPath),
+			isDir: false, // files in ca.Files are definitely not dirs
+			rc:    rc,
+			ca:    ca,
+			file:  f,
+		}, ca, nil
+	}
+
+	if ca.Dirs[vPath] {
+		return &zipFile{name: filepath.Base(vPath), isDir: true, ca: ca}, ca, nil
 	}
 
 	ca.Close()
@@ -235,37 +233,35 @@ func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
 	}
 
 	vPath := strings.Trim(filepath.ToSlash(res.VirtualPath), "/")
-	for _, f := range ca.Reader.File {
-		if strings.Trim(f.Name, "/") == vPath {
-			if f.Method == zip.Store {
-				relPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
-				osFile, err := m.osFs.Open(relPath)
-				if err != nil {
-					ca.Close()
-					return nil, nil, err
-				}
-
-				off, err := f.DataOffset()
-				if err != nil {
-					osFile.Close()
-					ca.Close()
-					return nil, nil, err
-				}
-
-				ss := &storeStreamSeeker{
-					sr: io.NewSectionReader(osFile, off, int64(f.UncompressedSize64)),
-					osFile: osFile,
-					ca: ca,
-				}
-				return ss, ss, nil
+	if f, ok := ca.Files[vPath]; ok {
+		if f.Method == zip.Store {
+			relPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
+			osFile, err := m.osFs.Open(relPath)
+			if err != nil {
+				ca.Close()
+				return nil, nil, err
 			}
 
-			zs := &zipStreamSeeker{
-				f:  f,
+			off, err := f.DataOffset()
+			if err != nil {
+				osFile.Close()
+				ca.Close()
+				return nil, nil, err
+			}
+
+			ss := &storeStreamSeeker{
+				sr: io.NewSectionReader(osFile, off, int64(f.UncompressedSize64)),
+				osFile: osFile,
 				ca: ca,
 			}
-			return zs, zs, nil
+			return ss, ss, nil
 		}
+
+		zs := &zipStreamSeeker{
+			f:  f,
+			ca: ca,
+		}
+		return zs, zs, nil
 	}
 
 	ca.Close()
