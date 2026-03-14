@@ -140,11 +140,13 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 
 	for _, f := range r.File {
 		// ZIP paths are always forward-slash separated
-		parts := strings.Split(strings.TrimSuffix(f.Name, "/"), "/")
-		name := parts[len(parts)-1]
+		cleanName := strings.TrimSuffix(f.Name, "/")
+		slashIdx := strings.LastIndexByte(cleanName, '/')
+		name := cleanName
 		parentInZip := ""
-		if len(parts) > 1 {
-			parentInZip = strings.Join(parts[:len(parts)-1], "/")
+		if slashIdx != -1 {
+			name = cleanName[slashIdx+1:]
+			parentInZip = cleanName[:slashIdx]
 		}
 
 		// ZIP paths are stored absolute-looking relative to VFS root
