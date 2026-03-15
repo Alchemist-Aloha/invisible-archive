@@ -40,7 +40,7 @@ const segments = computed(() => {
       <ChevronRight class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-gray-300 dark:text-dracula-500" />
       <button 
         @click="emit('navigate', seg.path)"
-        class="px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-dracula-purple/20 transition-all text-gray-600 dark:text-dracula-100 hover:text-blue-600 dark:hover:text-dracula-purple font-semibold whitespace-nowrap border border-transparent hover:border-blue-100 dark:hover:border-dracula-purple/30"
+        class="px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-md hover:bg-blue-50 dark:hover:bg-dracula-purple/20 transition-all text-gray-600 dark:text-dracula-100 hover:text-blue-600 dark:hover:text-dracula-purple font-semibold whitespace-nowrap border border-transparent hover:border-blue-100 dark:hover:border-dracula-purple/30 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
       >
         {{ seg.name }}
       </button>

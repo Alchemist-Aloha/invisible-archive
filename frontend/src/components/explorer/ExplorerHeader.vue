@@ -78,30 +78,33 @@ const emit = defineEmits<{
         <button 
           @click="emit('setLayoutMode', 'grid')"
           :class="[
-            'p-1.5 rounded-lg transition-all',
+            'p-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none',
             layoutMode === 'grid' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
           ]"
           title="Grid View"
+          aria-label="Grid View"
         >
           <LayoutGrid class="w-4 h-4" />
         </button>
         <button 
           @click="emit('setLayoutMode', 'list')"
           :class="[
-            'p-1.5 rounded-lg transition-all',
+            'p-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none',
             layoutMode === 'list' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
           ]"
           title="List View"
+          aria-label="List View"
         >
           <List class="w-4 h-4" />
         </button>
         <button 
           @click="emit('setLayoutMode', 'details')"
           :class="[
-            'p-1.5 rounded-lg transition-all',
+            'p-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none',
             layoutMode === 'details' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
           ]"
           title="Details View"
+          aria-label="Details View"
         >
           <LayoutList class="w-4 h-4" />
         </button>
@@ -110,7 +113,7 @@ const emit = defineEmits<{
       <!-- Mobile Layout Toggle -->
       <button 
         @click="emit('cycleLayout')"
-        class="sm:hidden p-2 bg-slate-100 dark:bg-dracula-800 rounded-lg text-slate-500 dark:text-dracula-400 border border-slate-200/50 dark:border-dracula-700/50"
+        class="sm:hidden p-2 bg-slate-100 dark:bg-dracula-800 rounded-lg text-slate-500 dark:text-dracula-400 border border-slate-200/50 dark:border-dracula-700/50 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
         aria-label="Cycle layout"
       >
         <LayoutGrid v-if="layoutMode === 'grid'" class="w-4 h-4" />
@@ -121,7 +124,7 @@ const emit = defineEmits<{
       <!-- Theme Toggle -->
       <button 
         @click="emit('toggleDarkMode')"
-        class="p-2 sm:p-2.5 bg-slate-100 dark:bg-dracula-800 hover:bg-slate-200 dark:hover:bg-dracula-700 rounded-lg sm:rounded-xl text-slate-500 dark:text-dracula-400 transition-colors border border-slate-200/50 dark:border-dracula-700/50"
+        class="p-2 sm:p-2.5 bg-slate-100 dark:bg-dracula-800 hover:bg-slate-200 dark:hover:bg-dracula-700 rounded-lg sm:rounded-xl text-slate-500 dark:text-dracula-400 transition-colors border border-slate-200/50 dark:border-dracula-700/50 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
         aria-label="Toggle dark mode"
       >
         <Sun v-if="isDarkMode" class="w-4 h-4" />
