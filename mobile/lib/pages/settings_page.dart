@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../providers/settings_provider.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -23,6 +24,17 @@ class _SettingsPageState extends State<SettingsPage> {
   void dispose() {
     _urlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final Uri uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not launch $url')),
+        );
+      }
+    }
   }
 
   @override
@@ -94,6 +106,26 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               value: context.watch<SettingsProvider>().isDarkMode,
               onChanged: (val) => context.read<SettingsProvider>().setDarkMode(val),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Text(
+            'About',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Card(
+            elevation: 0,
+            color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+            child: ListTile(
+              leading: const Icon(Icons.code),
+              title: const Text('GitHub Repository'),
+              subtitle: const Text('View source code and report issues'),
+              trailing: const Icon(Icons.open_in_new, size: 20),
+              onTap: () => _launchUrl('https://github.com/Alchemist-Aloha/invisible-archive'),
             ),
           ),
           const SizedBox(height: 48),
