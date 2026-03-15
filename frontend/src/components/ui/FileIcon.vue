@@ -7,7 +7,7 @@ import {
   FileCode, 
   File as FileGeneric 
 } from 'lucide-vue-next';
-import { CAP_STREAM, CAP_RENDER, CAP_EDIT } from '../api';
+import { CAP_STREAM, CAP_RENDER, CAP_EDIT } from '../../types';
 
 const props = defineProps<{
   name: string;

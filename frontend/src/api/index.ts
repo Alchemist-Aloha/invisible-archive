@@ -1,23 +1,5 @@
 import axios from 'axios';
-
-export interface FileItem {
-  name: string;
-  path: string;
-  is_dir: boolean;
-  size: number;
-  mod_time: number;
-  capabilities: number;
-}
-
-export interface ListResponse {
-  items: FileItem[];
-  effective_path: string;
-}
-
-export const CAP_BROWSE = 1;
-export const CAP_STREAM = 2;
-export const CAP_RENDER = 4;
-export const CAP_EDIT = 8;
+import type { FileItem, ListResponse } from '../types';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api',
@@ -34,7 +16,6 @@ export const searchFiles = async (q: string): Promise<FileItem[]> => {
 };
 
 export const getRawUrl = (path: string, download: boolean = false) => {
-  // Remove leading slash if present to avoid double slashes after /raw/
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
   let url = `${api.defaults.baseURL}/raw/${encodedPath}`;
