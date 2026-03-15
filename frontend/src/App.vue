@@ -10,6 +10,7 @@ import { usePreview } from './composables/usePreview';
 import ExplorerHeader from './components/explorer/ExplorerHeader.vue';
 import Breadcrumbs from './components/explorer/Breadcrumbs.vue';
 import FileGrid from './components/explorer/FileGrid.vue';
+import WaterfallView from './components/explorer/WaterfallView.vue';
 import FilePreview from './components/preview/FilePreview.vue';
 import 'photoswipe/style.css';
 
@@ -162,8 +163,13 @@ watch(currentPath, () => {
 
       <!-- Scrollable Content -->
       <div class="flex-1 min-h-0 overflow-hidden">
+        <WaterfallView
+          v-if="layoutMode === 'waterfall'"
+          :path="currentPath"
+          @click="(item, items) => handlePreview(item, items)"
+        />
         <FileGrid 
-          v-if="displayItems && displayItems.length > 0"
+          v-else-if="displayItems && displayItems.length > 0"
           :items="displayItems" 
           :layout="layoutMode"
           @navigate="handleNavigate"

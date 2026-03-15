@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 
-export type LayoutMode = 'grid' | 'list' | 'details';
+export type LayoutMode = 'grid' | 'list' | 'details' | 'waterfall';
 
 export function useLayout() {
   const layoutMode = ref<LayoutMode>((localStorage.getItem('layoutMode') as LayoutMode) || 'grid');
@@ -11,7 +11,7 @@ export function useLayout() {
   };
 
   const cycleLayout = () => {
-    const modes: LayoutMode[] = ['grid', 'list', 'details'];
+    const modes: LayoutMode[] = ['grid', 'list', 'details', 'waterfall'];
     const currentIndex = modes.indexOf(layoutMode.value);
     setLayoutMode(modes[(currentIndex + 1) % modes.length]);
   };

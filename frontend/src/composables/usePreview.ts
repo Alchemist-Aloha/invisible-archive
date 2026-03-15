@@ -54,10 +54,11 @@ export function usePreview(displayItems: Ref<FileItem[] | undefined>) {
     });
   };
 
-  const handlePreview = (item: FileItem) => {
+  const handlePreview = (item: FileItem, customItems?: FileItem[]) => {
     if ((item.capabilities & CAP_RENDER) && !item.name.toLowerCase().endsWith('.pdf')) {
-      if (lightbox.value && displayItems.value) {
-        const imageItems = displayItems.value.filter(i => (i.capabilities & CAP_RENDER) && !i.name.toLowerCase().endsWith('.pdf'));
+      const itemsToUse = customItems || displayItems.value;
+      if (lightbox.value && itemsToUse) {
+        const imageItems = itemsToUse.filter(i => (i.capabilities & CAP_RENDER) && !i.name.toLowerCase().endsWith('.pdf'));
         const index = imageItems.findIndex(i => i.path === item.path);
         
         if (index !== -1) {

@@ -7,7 +7,8 @@ import {
   LayoutGrid, 
   List, 
   LayoutList,
-  Info
+  Info,
+  Tent
 } from 'lucide-vue-next';
 import type { LayoutMode } from '../../composables/useLayout';
 
@@ -48,7 +49,7 @@ const emit = defineEmits<{
         <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-800 dark:text-dracula-200 leading-none">
           Archive
         </h1>
-        <p class="text-[10px] font-bold text-slate-400 dark:text-dracula-500 uppercase tracking-widest mt-0.5">Invisible</p>
+        <p class="text-[10px] font-bold text-slate-400 dark:text-dracula-50 uppercase tracking-widest mt-0.5">Invisible</p>
       </div>
     </div>
     
@@ -108,6 +109,17 @@ const emit = defineEmits<{
         >
           <LayoutList class="w-4 h-4" />
         </button>
+        <button 
+          @click="emit('setLayoutMode', 'waterfall')"
+          :class="[
+            'p-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none',
+            layoutMode === 'waterfall' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
+          ]"
+          title="Waterfall Discovery"
+          aria-label="Waterfall Discovery"
+        >
+          <Tent class="w-4 h-4" />
+        </button>
       </div>
 
       <!-- Mobile Layout Toggle -->
@@ -118,7 +130,8 @@ const emit = defineEmits<{
       >
         <LayoutGrid v-if="layoutMode === 'grid'" class="w-4 h-4" />
         <List v-else-if="layoutMode === 'list'" class="w-4 h-4" />
-        <LayoutList v-else class="w-4 h-4" />
+        <LayoutList v-else-if="layoutMode === 'details'" class="w-4 h-4" />
+        <Tent v-else class="w-4 h-4" />
       </button>
 
       <!-- Theme Toggle -->

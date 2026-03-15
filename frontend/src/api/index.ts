@@ -15,6 +15,11 @@ export const searchFiles = async (q: string): Promise<FileItem[]> => {
   return data;
 };
 
+export const fetchRandom = async (path: string, limit: number = 50): Promise<FileItem[]> => {
+  const { data } = await api.get<FileItem[]>('/random', { params: { path, limit } });
+  return data;
+};
+
 export const getRawUrl = (path: string, download: boolean = false) => {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
   const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
