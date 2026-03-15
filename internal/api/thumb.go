@@ -10,10 +10,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/disintegration/imaging"
 	"github.com/likun/invisible-archive/internal/vfs"
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/tiff"
 	_ "golang.org/x/image/webp"
 )
 
@@ -49,6 +52,19 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("THUMB: File not found: %s, err: %v", path, err)
 		http.Error(w, "file not found", http.StatusNotFound)
+		return
+	}
+
+	// SVG Bypass: SVGs are their own thumbnails
+	if strings.HasSuffix(strings.ToLower(stat.Name()), ".svg") {
+		reader, closer, err := t.vfs.GetRawReader(path)
+		if err != nil {
+			http.Error(w, "failed to read svg", http.StatusInternalServerError)
+			return
+		}
+		defer closer.Close()
+		w.Header().Set("Content-Type", "image/svg+xml")
+		http.ServeContent(w, r, stat.Name(), stat.ModTime(), reader)
 		return
 	}
 

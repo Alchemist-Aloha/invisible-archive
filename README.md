@@ -68,6 +68,7 @@ The easiest way to run Invisible Archive is via Docker Compose.
 | `APP_PORT` | The port on your host machine to access the web UI. |
 | `LIBRARY_DIR` | The absolute path to your media library on the host machine (mounted as Read-Only). |
 | `CACHE_DIR` | The absolute path to the cache directory on the host machine. |
+| `THUMB_WORKERS` | Maximum concurrent thumbnail generation workers (default: 1). Adjust based on CPU cores and target usage. |
 
 ## 🛠 Local Development
 

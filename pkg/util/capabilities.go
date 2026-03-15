@@ -24,9 +24,9 @@ func GetCapabilities(name string, isDir bool) uint32 {
 	switch ext {
 	case ".mp4", ".mkv", ".webm", ".mp3", ".wav", ".m4v":
 		caps |= CapStream
-	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf":
+	case ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp", ".tiff", ".ico", ".svg":
 		caps |= CapRender
-	case ".txt", ".md", ".go", ".js", ".ts", ".vue", ".css", ".json", ".py", ".cpp", ".h":
+	case ".txt", ".md", ".go", ".js", ".ts", ".vue", ".css", ".json", ".py", ".cpp", ".h", ".pdf":
 		caps |= CapEdit
 	}
 

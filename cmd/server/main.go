@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -60,9 +61,18 @@ func main() {
 	// Initialize Thumbnailer
 	cacheDir := os.Getenv("CACHE_DIR")
 	if cacheDir == "" {
-		cacheDir = "./cache"
+	        cacheDir = "./cache"
 	}
-	thumb, err := api.NewThumbnailer(vfsMgr, filepath.Join(cacheDir, "thumbs"), 2)
+
+	workers := 1
+	if w := os.Getenv("THUMB_WORKERS"); w != "" {
+	        if val, err := strconv.Atoi(w); err == nil {
+	                workers = val
+	        }
+	}
+
+	thumb, err := api.NewThumbnailer(vfsMgr, filepath.Join(cacheDir, "thumbs"), workers)
+
 	if err != nil {
 		log.Fatalf("failed to initialize thumbnailer: %v", err)
 	}

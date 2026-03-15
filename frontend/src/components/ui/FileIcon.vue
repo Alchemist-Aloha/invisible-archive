@@ -5,6 +5,7 @@ import {
   FileVideo, 
   FileImage, 
   FileCode, 
+  FileText,
   File as FileGeneric 
 } from 'lucide-vue-next';
 import { CAP_STREAM, CAP_RENDER, CAP_EDIT } from '../../types';
@@ -15,13 +16,16 @@ const props = defineProps<{
   capabilities: number;
 }>();
 
-const isZip = props.name.toLowerCase().endsWith('.zip');
+const nameLower = props.name.toLowerCase();
+const isZip = nameLower.endsWith('.zip');
+const isPdf = nameLower.endsWith('.pdf');
 </script>
 
 <template>
   <Folder v-if="props.isDir" class="w-full h-full text-blue-500 fill-blue-500/10 dark:fill-blue-400/20 transition-colors" />
   <FileArchive v-else-if="isZip" class="w-full h-full text-amber-500 fill-amber-500/10 dark:fill-amber-400/20 transition-colors" />
   <FileVideo v-else-if="props.capabilities & CAP_STREAM" class="w-full h-full text-indigo-500 fill-indigo-500/10 dark:fill-indigo-400/20 transition-colors" />
+  <FileText v-else-if="isPdf" class="w-full h-full text-rose-600 fill-rose-500/10 dark:fill-rose-400/20 transition-colors" />
   <FileImage v-else-if="props.capabilities & CAP_RENDER" class="w-full h-full text-rose-500 fill-rose-500/10 dark:fill-rose-400/20 transition-colors" />
   <FileCode v-else-if="props.capabilities & CAP_EDIT" class="w-full h-full text-emerald-500 fill-emerald-500/10 dark:fill-emerald-400/20 transition-colors" />
   <FileGeneric v-else class="w-full h-full text-slate-400 fill-slate-400/5 dark:fill-dracula-400/10 transition-colors" />

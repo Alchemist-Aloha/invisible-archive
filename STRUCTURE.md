@@ -12,7 +12,6 @@ This document maps the repository layout and explains the responsibility of each
 - go.mod: Go module definition and direct/indirect backend dependencies.
 - go.sum: Dependency checksums for reproducible Go builds.
 - sqlc.yaml: sqlc generation config pointing to schema/queries and Go output package.
-- test_mime.go: Small utility program for checking Go MIME type mappings.
 - STRUCTURE.md: This file.
 
 ## cmd/server
