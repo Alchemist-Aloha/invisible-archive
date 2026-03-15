@@ -146,6 +146,13 @@ Frontend:
 Docker:
 - docker-compose up -d
 
+Mobile (APK):
+- cd mobile
+- export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+- export ANDROID_HOME=~/Android/Sdk
+- flutter pub get
+- flutter build apk --release
+
 UI Testing (Playwright):
 - Use `webapp-testing` skill for browser-based verification.
 - To run a test with managed servers:
