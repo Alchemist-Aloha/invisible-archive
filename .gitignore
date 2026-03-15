@@ -1,10 +1,17 @@
 # Binaries
 bin/
+server
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+
+# Diagnostic and Logs
+*.log
+diagnose_seek.py
+test_mime.go
+diagnose_cache/
 
 # Go
 vendor/
