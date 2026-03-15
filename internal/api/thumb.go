@@ -1,23 +1,20 @@
 package api
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
-	"github.com/disintegration/imaging"
+	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/likun/invisible-archive/internal/vfs"
-	_ "golang.org/x/image/bmp"
-	_ "golang.org/x/image/tiff"
-	_ "golang.org/x/image/webp"
+	"golang.org/x/sync/singleflight"
 )
 
 type Thumbnailer struct {
@@ -25,7 +22,7 @@ type Thumbnailer struct {
 	cacheDir   string
 	concurSem  chan struct{} // Semaphore for throttling
 	mu         sync.Mutex
-	processing map[string]chan struct{} // Track currently processing thumbs
+	processing singleflight.Group
 }
 
 func NewThumbnailer(vfs *vfs.Manager, cacheDir string, maxWorkers int) (*Thumbnailer, error) {
@@ -34,10 +31,9 @@ func NewThumbnailer(vfs *vfs.Manager, cacheDir string, maxWorkers int) (*Thumbna
 	}
 
 	return &Thumbnailer{
-		vfs:        vfs,
-		cacheDir:   cacheDir,
-		concurSem:  make(chan struct{}, maxWorkers),
-		processing: make(map[string]chan struct{}),
+		vfs:       vfs,
+		cacheDir:  cacheDir,
+		concurSem: make(chan struct{}, maxWorkers),
 	}, nil
 }
 
@@ -48,15 +44,32 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stat, err := t.vfs.Stat(path)
-	if err != nil {
-		log.Printf("THUMB: File not found: %s, err: %v", path, err)
-		http.Error(w, "file not found", http.StatusNotFound)
-		return
+	// 1. FAST-PATH: Try to get metadata from SQLite first to avoid VFS Stat (slow for ZIPs)
+	var size int64
+	var modTime int64
+	
+	if t.vfs.GetIndexer() != nil {
+		item, err := t.vfs.GetIndexer().GetQueries().GetItemByPath(context.Background(), path)
+		if err == nil {
+			size = item.Size
+			modTime = item.ModTime
+		}
+	}
+
+	// Fallback to VFS Stat if not indexed yet
+	if size == 0 {
+		stat, err := t.vfs.Stat(path)
+		if err != nil {
+			log.Printf("THUMB: File not found: %s, err: %v", path, err)
+			http.Error(w, "file not found", http.StatusNotFound)
+			return
+		}
+		size = stat.Size()
+		modTime = stat.ModTime().Unix()
 	}
 
 	// SVG Bypass: SVGs are their own thumbnails
-	if strings.HasSuffix(strings.ToLower(stat.Name()), ".svg") {
+	if strings.HasSuffix(strings.ToLower(path), ".svg") {
 		reader, closer, err := t.vfs.GetRawReader(path)
 		if err != nil {
 			http.Error(w, "failed to read svg", http.StatusInternalServerError)
@@ -64,59 +77,74 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 		}
 		defer closer.Close()
 		w.Header().Set("Content-Type", "image/svg+xml")
-		http.ServeContent(w, r, stat.Name(), stat.ModTime(), reader)
+		// Using a dummy name since we don't have the stat object here for simplicity
+		// ServeContent handles Range and Caching
+		http.ServeContent(w, r, "thumb.svg", time.Unix(modTime, 0), reader)
 		return
 	}
 
-	// Fast Identity Cache Key
-	id := fmt.Sprintf("%s-%d-%d", path, stat.Size(), stat.ModTime().Unix())
+	// 2. Generate Identity Cache Key
+	id := fmt.Sprintf("%s-%d-%d", path, size, modTime)
 	hash := fmt.Sprintf("%x", md5.Sum([]byte(id)))
-	thumbPath := filepath.Join(t.cacheDir, hash+".jpg")
+	thumbPath := filepath.Join(t.cacheDir, hash+".webp")
 
-	// Check cache
+	// 3. Check Cache
 	if _, err := os.Stat(thumbPath); err == nil {
 		http.ServeFile(w, r, thumbPath)
 		return
 	}
 
-	log.Printf("THUMB: Generating for %s", path)
+	// 4. SINGLE-FLIGHT: Ensure only one worker generates this specific thumbnail
+	_, err, _ := t.processing.Do(hash, func() (interface{}, error) {
+		// Re-check cache inside singleflight
+		if _, err := os.Stat(thumbPath); err == nil {
+			return nil, nil
+		}
 
-	// Throttle and generate
-	t.concurSem <- struct{}{}
-	defer func() { <-t.concurSem }()
+		log.Printf("THUMB: Generating (WebP) for %s", path)
 
-	// Re-check cache inside semaphore (might have been generated while waiting)
-	if _, err := os.Stat(thumbPath); err == nil {
-		http.ServeFile(w, r, thumbPath)
-		return
-	}
+		// Throttle global concurrent generations
+		t.concurSem <- struct{}{}
+		defer func() { <-t.concurSem }()
 
-	// Generate
-	reader, closer, err := t.vfs.GetRawReader(path)
+		// Generate
+		reader, closer, err := t.vfs.GetRawReader(path)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get reader: %w", err)
+		}
+		defer closer.Close()
+
+		img, err := vips.NewImageFromReader(reader)
+		if err != nil {
+			return nil, fmt.Errorf("failed to decode: %w", err)
+		}
+		defer img.Close()
+
+		// Resize using Thumbnail (shrink-on-load)
+		if err := img.Thumbnail(200, 200, vips.InterestingNone); err != nil {
+			return nil, fmt.Errorf("failed to resize: %w", err)
+		}
+
+		// Export to WebP (smaller than JPEG)
+		wp := vips.NewWebpExportParams()
+		wp.Quality = 75
+		thumbBytes, _, err := img.ExportWebp(wp)
+		if err != nil {
+			return nil, fmt.Errorf("failed to export webp: %w", err)
+		}
+
+		if err := os.WriteFile(thumbPath, thumbBytes, 0644); err != nil {
+			return nil, fmt.Errorf("failed to save: %w", err)
+		}
+
+		return nil, nil
+	})
+
 	if err != nil {
-		log.Printf("THUMB: Failed to get reader for %s: %v", path, err)
-		http.Error(w, "failed to read file", http.StatusInternalServerError)
-		return
-	}
-	defer closer.Close()
-
-	src, err := imaging.Decode(reader)
-	if err != nil {
-		log.Printf("THUMB: Failed to decode image %s: %v", path, err)
-		http.Error(w, "failed to decode image", http.StatusInternalServerError)
+		log.Printf("THUMB: Error for %s: %v", path, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// Resize to 200px width, preserving aspect ratio
-	dst := imaging.Resize(src, 200, 0, imaging.Lanczos)
-
-	// Save to cache (imaging.Save detects format from .jpg extension)
-	if err := imaging.Save(dst, thumbPath); err != nil {
-		log.Printf("THUMB: Failed to save thumbnail for %s: %v", path, err)
-		http.Error(w, "failed to save thumbnail", http.StatusInternalServerError)
-		return
-	}
-
-	log.Printf("THUMB: Success for %s -> %s", path, thumbPath)
 	http.ServeFile(w, r, thumbPath)
 }

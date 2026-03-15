@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/likun/invisible-archive/internal/api"
@@ -19,6 +20,11 @@ import (
 )
 
 func main() {
+	// Initialize libvips
+	vips.LoggingSettings(nil, vips.LogLevelError)
+	vips.Startup(nil)
+	defer vips.Shutdown()
+
 	// Register additional mime types
 	mime.AddExtensionType(".m4v", "video/mp4") // m4v is basically mp4, browsers handle video/mp4 better
 	mime.AddExtensionType(".mkv", "video/x-matroska")
