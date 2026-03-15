@@ -94,6 +94,7 @@ func main() {
 	r.Route("/api", func(r chi.Router) {
 		r.Get("/ls", h.List)
 		r.Get("/search", h.Search)
+		r.Get("/random", h.Random)
 		r.Get("/thumb", thumb.GetThumbnail)
 		r.Get("/raw/*", h.Raw)
 		r.Head("/raw/*", h.Raw)

@@ -105,7 +105,22 @@ Definition of done:
 - Large list performance characteristics unchanged or improved.
 - Mobile interaction paths still functional.
 
-### C. Data/index/search change
+### C. Mobile (Flutter) development
+
+1. **Path Handling**: Always preserve leading slashes for absolute VFS paths. Ensure `Uri.encodeComponent` is used for all path-based API queries.
+2. **State Management**: Use `Provider`. Keep business logic in `ExplorerProvider` or `SettingsProvider` and UI in `pages/` or `widgets/`.
+3. **Media Integration**:
+   - Use `chewie` for video playback to leverage native ExoPlayer/AVPlayer UI.
+   - Use `photo_view` for high-performance image zooming and gallery transitions.
+   - Use `cached_network_image` for all network-bound visual assets.
+4. **Layout**: Maintain support for Grid, List, and Details modes. Ensure the Waterfall View correctly handles recursive archive crawling.
+
+Definition of done:
+- `flutter build apk` succeeds using **Java 21**.
+- Video controls are functional and fullscreen works.
+- ZIP transparency is maintained during navigation.
+
+### D. Data/index/search change
 
 1. Update schema.sql and queries.sql first.
 2. Regenerate sqlc outputs when query/schema changes are intentional.

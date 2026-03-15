@@ -27,3 +27,14 @@ WHERE path LIKE ? || '%';
 -- name: GetItemByPath :one
 SELECT * FROM items
 WHERE path = ? LIMIT 1;
+
+-- name: ListItemsByPathPrefix :many
+SELECT * FROM items
+WHERE path LIKE :path_prefix || '%' AND is_dir = 0
+LIMIT 1000;
+
+-- name: RandomItemsByPathPrefix :many
+SELECT * FROM items
+WHERE path LIKE :path_prefix || '%' AND is_dir = 0 AND (capabilities & 4) != 0
+ORDER BY RANDOM()
+LIMIT ?;

@@ -11,12 +11,14 @@ Invisible Archive is a high-performance, self-hosted file management system desi
 
 - **Transparent Archive Browsing:** Navigate `.zip` files as if they were standard folders. The "Path Peeler" algorithm seamlessly resolves virtual paths.
 - **Auto-Enter Archives:** Automatically navigates into archives containing a single root folder, eliminating redundant clicks.
+- **Waterfall Discovery Mode:** Recursive, visual browsing of images under any path, with full support for crawling inside archives.
 - **NAS-Optimized Performance:** 
     - **Reference-Counted LRU Cache:** Keeps frequently accessed archives "warm" while strictly protecting system memory.
     - **Hybrid Indexing:** Instant search (<5ms for 1M files) using SQLite FTS5. Indexing is lazy and opportunistic to minimize disk IO.
 - **High-Performance Streaming:** Native support for HTTP Range requests (206 Partial Content), allowing for $O(1)$ seeking in videos and large media files.
 - **Multi-Layout Engine:** Choose between **Grid** (large thumbnails), **List** (compact), or **Details** (list with metadata) views.
 - **Global Dark Mode:** Full dark mode support with a single toggle, respecting system preferences and persistent storage.
+- **Android Mobile App:** Dedicated Flutter-based Android application with advanced media playback and ZIP path transparency.
 - **Smart Image Pipeline:** Throttled, pure-Go thumbnail generation with a "Fast Identity" cache system to prevent NAS CPU spikes.
 - **Mobile-First Experience:** Fully **installable PWA** with multi-size icon support and native-like touch gestures, including pinch-to-zoom and mobile-optimized video controls.
 - **Modern UI:** Responsive "Finder-style" interface built with Vue 3 and Tailwind CSS v4, featuring virtual scrolling for directories with 100,000+ items.
@@ -35,6 +37,12 @@ Invisible Archive is a high-performance, self-hosted file management system desi
 - **Image Viewer:** `PhotoSwipe v5` for high-performance, gesture-driven browsing.
 - **Video Player:** `Plyr` with mobile-optimized progress controls.
 - **Styling:** `Tailwind CSS v4` with class-based dark mode.
+
+### Mobile (Flutter)
+- **Framework:** `Flutter 3.x` for high-performance Android builds.
+- **State:** `Provider` for reactive UI updates and settings persistence.
+- **Video:** `chewie` + `video_player` for a feature-rich playback UI using native ExoPlayer/AVPlayer.
+- **Image:** `photo_view` + `cached_network_image` for native-like gallery behavior and zoom.
 
 ## 📦 Deployment
 
@@ -74,6 +82,13 @@ The easiest way to run Invisible Archive is via Docker Compose.
    cd frontend
    npm install --legacy-peer-deps
    npm run dev
+   ```
+
+3. **Mobile:**
+   ```bash
+   cd mobile
+   flutter pub get
+   flutter build apk --release
    ```
 
 ## ⚖️ License

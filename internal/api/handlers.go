@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"path"
 	"path/filepath"
+	"strconv"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/likun/invisible-archive/internal/vfs"
@@ -122,6 +123,38 @@ func (h *Handler) Search(w http.ResponseWriter, r *http.Request) {
 
 	pattern := "%" + q + "%"
 	files, err := h.vfs.Search(r.Context(), pattern)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	items := make([]FileItem, 0, len(files))
+	for _, f := range files {
+		items = append(items, FileItem{
+			Name:         f.Name,
+			Path:         f.Path,
+			IsDir:        f.IsDir,
+			Size:         f.Size,
+			ModTime:      f.ModTime,
+			Capabilities: uint32(f.Capabilities),
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(items)
+}
+
+func (h *Handler) Random(w http.ResponseWriter, r *http.Request) {
+	pathPrefix := r.URL.Query().Get("path")
+	limitStr := r.URL.Query().Get("limit")
+	limit := 50
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil {
+			limit = l
+		}
+	}
+
+	files, err := h.vfs.Random(r.Context(), pathPrefix, limit)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

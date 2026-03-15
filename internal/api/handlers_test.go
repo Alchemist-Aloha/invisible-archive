@@ -100,8 +100,8 @@ func TestListHandlerAutoEnterZip(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if resp.EffectivePath != "test.zip/folder" {
-		t.Errorf("Expected effective path 'test.zip/folder', got '%s'", resp.EffectivePath)
+	if resp.EffectivePath != "/test.zip/folder" {
+		t.Errorf("Expected effective path '/test.zip/folder', got '%s'", resp.EffectivePath)
 	}
 
 	if len(resp.Items) != 1 || resp.Items[0].Name != "file.txt" {

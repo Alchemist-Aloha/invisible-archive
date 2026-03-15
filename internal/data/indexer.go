@@ -99,6 +99,12 @@ func (idx *Indexer) IndexDirectory(ctx context.Context, physicalPath string) err
 		if err != nil {
 			return err
 		}
+
+		// Shallowly index ZIP contents in the background
+		if !info.IsDir() && strings.HasSuffix(strings.ToLower(entry.Name()), ".zip") {
+			relZipPath := filepath.ToSlash(filepath.Join(relParent, entry.Name()))
+			go idx.IndexZip(ctx, filepath.Join(physicalPath, entry.Name()), relZipPath)
+		}
 	}
 
 	// Start watching this directory

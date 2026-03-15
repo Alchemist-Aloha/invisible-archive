@@ -83,6 +83,92 @@ func (q *Queries) ListItemsByParent(ctx context.Context, parentPath string) ([]I
 	return items, nil
 }
 
+const listItemsByPathPrefix = `-- name: ListItemsByPathPrefix :many
+SELECT id, parent_path, name, path, is_dir, size, mod_time, capabilities, is_inside_zip, indexed_at FROM items
+WHERE path LIKE ?1 || '%' AND is_dir = 0
+LIMIT 1000
+`
+
+func (q *Queries) ListItemsByPathPrefix(ctx context.Context, pathPrefix sql.NullString) ([]Item, error) {
+	rows, err := q.db.QueryContext(ctx, listItemsByPathPrefix, pathPrefix)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.ParentPath,
+			&i.Name,
+			&i.Path,
+			&i.IsDir,
+			&i.Size,
+			&i.ModTime,
+			&i.Capabilities,
+			&i.IsInsideZip,
+			&i.IndexedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const randomItemsByPathPrefix = `-- name: RandomItemsByPathPrefix :many
+SELECT id, parent_path, name, path, is_dir, size, mod_time, capabilities, is_inside_zip, indexed_at FROM items
+WHERE path LIKE ? || '%' AND is_dir = 0 AND (capabilities & 4) != 0
+ORDER BY RANDOM()
+LIMIT ?
+`
+
+type RandomItemsByPathPrefixParams struct {
+	PathPrefix sql.NullString
+	Limit      int64
+}
+
+func (q *Queries) RandomItemsByPathPrefix(ctx context.Context, arg RandomItemsByPathPrefixParams) ([]Item, error) {
+	rows, err := q.db.QueryContext(ctx, randomItemsByPathPrefix, arg.PathPrefix, arg.Limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Item
+	for rows.Next() {
+		var i Item
+		if err := rows.Scan(
+			&i.ID,
+			&i.ParentPath,
+			&i.Name,
+			&i.Path,
+			&i.IsDir,
+			&i.Size,
+			&i.ModTime,
+			&i.Capabilities,
+			&i.IsInsideZip,
+			&i.IndexedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const searchItems = `-- name: SearchItems :many
 SELECT id, parent_path, name, path, is_dir, size, mod_time, capabilities, is_inside_zip, indexed_at
 FROM items

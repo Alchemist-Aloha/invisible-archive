@@ -37,8 +37,8 @@ func TestManager(t *testing.T) {
 			t.Errorf("ReadDir(archive.zip) error: %v", err)
 		} else {
 			// ZIP contains only "inner/" so it should auto-enter it
-			if effectivePath != "archive.zip/inner" {
-				t.Errorf("expected effective path 'archive.zip/inner', got '%s'", effectivePath)
+			if effectivePath != "/archive.zip/inner" {
+				t.Errorf("expected effective path '/archive.zip/inner', got '%s'", effectivePath)
 			}
 			found := false
 			for _, fi := range files {

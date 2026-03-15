@@ -3,6 +3,7 @@ package vfs
 import (
 	"archive/zip"
 	"context"
+	"database/sql"
 	"fmt"
 	"io"
 	"os"
@@ -146,7 +147,7 @@ func (m *Manager) ReadDir(path string) ([]os.FileInfo, string, error) {
 
 	finalItems, err := m.readZipDir(ca.Reader, effectiveVPath)
 	relZipPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
-	effectivePath := filepath.ToSlash(filepath.Join(relZipPath, effectiveVPath))
+	effectivePath := "/" + filepath.ToSlash(filepath.Join(relZipPath, effectiveVPath))
 	return finalItems, effectivePath, err
 }
 
@@ -215,6 +216,19 @@ func (m *Manager) Search(ctx context.Context, pattern string) ([]data.Item, erro
 
 func (m *Manager) GetIndexer() *data.Indexer {
 	return m.indexer
+}
+
+func (m *Manager) Random(ctx context.Context, pathPrefix string, limit int) ([]data.Item, error) {
+	if m.indexer == nil {
+		return nil, fmt.Errorf("indexer not initialized")
+	}
+	if !strings.HasPrefix(pathPrefix, "/") {
+		pathPrefix = "/" + pathPrefix
+	}
+	return m.indexer.GetQueries().RandomItemsByPathPrefix(ctx, data.RandomItemsByPathPrefixParams{
+		PathPrefix: sql.NullString{String: pathPrefix, Valid: true},
+		Limit:      int64(limit),
+	})
 }
 
 func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
