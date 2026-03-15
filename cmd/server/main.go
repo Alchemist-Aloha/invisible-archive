@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/davidbyttow/govips/v2/vips"
 	"github.com/go-chi/chi/v5"
@@ -67,14 +68,14 @@ func main() {
 	// Initialize Thumbnailer
 	cacheDir := os.Getenv("CACHE_DIR")
 	if cacheDir == "" {
-	        cacheDir = "./cache"
+		cacheDir = "./cache"
 	}
 
 	workers := 1
 	if w := os.Getenv("THUMB_WORKERS"); w != "" {
-	        if val, err := strconv.Atoi(w); err == nil {
-	                workers = val
-	        }
+		if val, err := strconv.Atoi(w); err == nil {
+			workers = val
+		}
 	}
 
 	thumb, err := api.NewThumbnailer(vfsMgr, filepath.Join(cacheDir, "thumbs"), workers)
@@ -82,6 +83,37 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize thumbnailer: %v", err)
 	}
+
+	// Connect Indexer to Thumbnailer for background discovery
+	indexer.Discovery = thumb.QueueBackground
+
+	// Start initial recursive scan
+	go func() {
+		log.Printf("INDEX: Starting initial library scan...")
+		
+		// Progress logger
+		stopProgress := make(chan struct{})
+		go func() {
+			ticker := time.NewTicker(5 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					tasks := indexer.GetActiveTasks()
+					if tasks > 0 {
+						log.Printf("INDEX: Proactive scan in progress... (%d folders in queue)", tasks)
+					}
+				case <-stopProgress:
+					return
+				}
+			}
+		}()
+
+		indexer.IndexRecursive(context.Background(), libraryPath)
+		
+		close(stopProgress)
+		log.Printf("INDEX: Full scan reached all branches.")
+	}()
 
 	h := api.NewHandler(vfsMgr)
 

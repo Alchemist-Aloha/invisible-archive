@@ -23,6 +23,7 @@ type Thumbnailer struct {
 	concurSem  chan struct{} // Semaphore for throttling
 	mu         sync.Mutex
 	processing singleflight.Group
+	queue      chan string   // Background generation queue
 }
 
 func NewThumbnailer(vfs *vfs.Manager, cacheDir string, maxWorkers int) (*Thumbnailer, error) {
@@ -30,11 +31,34 @@ func NewThumbnailer(vfs *vfs.Manager, cacheDir string, maxWorkers int) (*Thumbna
 		return nil, err
 	}
 
-	return &Thumbnailer{
+	t := &Thumbnailer{
 		vfs:       vfs,
 		cacheDir:  cacheDir,
 		concurSem: make(chan struct{}, maxWorkers),
-	}, nil
+		queue:     make(chan string, 1000), // Buffer for background tasks
+	}
+
+	// Start background worker
+	go t.backgroundWorker()
+
+	return t, nil
+}
+
+// QueueBackground adds a path to the background generation queue
+func (t *Thumbnailer) QueueBackground(path string) {
+	select {
+	case t.queue <- path:
+		// Queued successfully
+	default:
+		// Queue full, skip background task
+	}
+}
+
+func (t *Thumbnailer) backgroundWorker() {
+	log.Printf("THUMB: Background worker started")
+	for path := range t.queue {
+		_, _ = t.generateInternal(path)
+	}
 }
 
 func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +68,40 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 1. FAST-PATH: Try to get metadata from SQLite first to avoid VFS Stat (slow for ZIPs)
+	// SVG Bypass: SVGs are their own thumbnails
+	if strings.HasSuffix(strings.ToLower(path), ".svg") {
+		reader, closer, err := t.vfs.GetRawReader(path)
+		if err != nil {
+			http.Error(w, "failed to read svg", http.StatusInternalServerError)
+			return
+		}
+		defer closer.Close()
+		
+		stat, err := t.vfs.Stat(path)
+		var modTime time.Time
+		if err == nil {
+			modTime = stat.ModTime()
+		} else {
+			modTime = time.Now()
+		}
+
+		w.Header().Set("Content-Type", "image/svg+xml")
+		http.ServeContent(w, r, "thumb.svg", modTime, reader)
+		return
+	}
+
+	thumbPath, err := t.generateInternal(path)
+	if err != nil {
+		log.Printf("THUMB: Error for %s: %v", path, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.ServeFile(w, r, thumbPath)
+}
+
+func (t *Thumbnailer) generateInternal(path string) (string, error) {
+	// 1. FAST-PATH: Try to get metadata from SQLite first to avoid VFS Stat
 	var size int64
 	var modTime int64
 	
@@ -60,27 +117,15 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 	if size == 0 {
 		stat, err := t.vfs.Stat(path)
 		if err != nil {
-			log.Printf("THUMB: File not found: %s, err: %v", path, err)
-			http.Error(w, "file not found", http.StatusNotFound)
-			return
+			return "", err
 		}
 		size = stat.Size()
 		modTime = stat.ModTime().Unix()
 	}
 
-	// SVG Bypass: SVGs are their own thumbnails
+	// SVG Bypass in internal: just skip
 	if strings.HasSuffix(strings.ToLower(path), ".svg") {
-		reader, closer, err := t.vfs.GetRawReader(path)
-		if err != nil {
-			http.Error(w, "failed to read svg", http.StatusInternalServerError)
-			return
-		}
-		defer closer.Close()
-		w.Header().Set("Content-Type", "image/svg+xml")
-		// Using a dummy name since we don't have the stat object here for simplicity
-		// ServeContent handles Range and Caching
-		http.ServeContent(w, r, "thumb.svg", time.Unix(modTime, 0), reader)
-		return
+		return "", nil
 	}
 
 	// 2. Generate Identity Cache Key
@@ -90,8 +135,7 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 
 	// 3. Check Cache
 	if _, err := os.Stat(thumbPath); err == nil {
-		http.ServeFile(w, r, thumbPath)
-		return
+		return thumbPath, nil
 	}
 
 	// 4. SINGLE-FLIGHT: Ensure only one worker generates this specific thumbnail
@@ -101,8 +145,6 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 			return nil, nil
 		}
 
-		log.Printf("THUMB: Generating (WebP) for %s", path)
-
 		// Throttle global concurrent generations
 		t.concurSem <- struct{}{}
 		defer func() { <-t.concurSem }()
@@ -110,41 +152,35 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 		// Generate
 		reader, closer, err := t.vfs.GetRawReader(path)
 		if err != nil {
-			return nil, fmt.Errorf("failed to get reader: %w", err)
+			return nil, err
 		}
 		defer closer.Close()
 
 		img, err := vips.NewImageFromReader(reader)
 		if err != nil {
-			return nil, fmt.Errorf("failed to decode: %w", err)
+			return nil, err
 		}
 		defer img.Close()
 
 		// Resize using Thumbnail (shrink-on-load)
 		if err := img.Thumbnail(200, 200, vips.InterestingNone); err != nil {
-			return nil, fmt.Errorf("failed to resize: %w", err)
+			return nil, err
 		}
 
-		// Export to WebP (smaller than JPEG)
+		// Export to WebP
 		wp := vips.NewWebpExportParams()
 		wp.Quality = 75
 		thumbBytes, _, err := img.ExportWebp(wp)
 		if err != nil {
-			return nil, fmt.Errorf("failed to export webp: %w", err)
+			return nil, err
 		}
 
 		if err := os.WriteFile(thumbPath, thumbBytes, 0644); err != nil {
-			return nil, fmt.Errorf("failed to save: %w", err)
+			return nil, err
 		}
 
 		return nil, nil
 	})
 
-	if err != nil {
-		log.Printf("THUMB: Error for %s: %v", path, err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	http.ServeFile(w, r, thumbPath)
+	return thumbPath, err
 }
