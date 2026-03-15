@@ -39,9 +39,10 @@ jobs:
           flutter pub get
 
       - name: Build APK
+        timeout-minutes: 20
         run: |
           cd mobile
-          flutter build apk --release
+          flutter build apk --release --no-pub
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
