@@ -11,6 +11,7 @@ class PreviewPage extends StatefulWidget {
   final ApiService api;
   final List<FileItem>? allImages;
   final int? initialIndex;
+  final Future<void> Function()? onLoadMore;
 
   const PreviewPage({
     Key? key,
@@ -18,6 +19,7 @@ class PreviewPage extends StatefulWidget {
     required this.api,
     this.allImages,
     this.initialIndex,
+    this.onLoadMore,
   }) : super(key: key);
 
   @override
@@ -30,6 +32,7 @@ class _PreviewPageState extends State<PreviewPage> {
   VideoPlayerController? _videoController;
   String? _textContent;
   bool _isLoadingText = false;
+  bool _isFetchingMore = false;
   late int _currentIndex;
 
   @override
@@ -43,6 +46,7 @@ class _PreviewPageState extends State<PreviewPage> {
     // Initial preloading
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _precacheImages(_currentIndex);
+      _checkLoadMore(_currentIndex);
     });
   }
 
@@ -51,6 +55,25 @@ class _PreviewPageState extends State<PreviewPage> {
       _initVideo();
     } else if (_currentItem.canEdit) {
       _loadText();
+    }
+  }
+
+  void _checkLoadMore(int index) async {
+    if (widget.allImages == null || widget.onLoadMore == null || _isFetchingMore) return;
+
+    // If we are within 10 images of the end, load more
+    if (index >= widget.allImages!.length - 10) {
+      _isFetchingMore = true;
+      try {
+        await widget.onLoadMore!();
+        if (mounted) {
+          setState(() {
+            // Rebuild to update itemCount in PhotoViewGallery
+          });
+        }
+      } finally {
+        _isFetchingMore = false;
+      }
     }
   }
 
@@ -157,6 +180,7 @@ class _PreviewPageState extends State<PreviewPage> {
           _currentItem = widget.allImages![index];
         });
         _precacheImages(index);
+        _checkLoadMore(index);
       },
     );
   }

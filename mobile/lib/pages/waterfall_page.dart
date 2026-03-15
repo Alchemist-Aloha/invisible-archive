@@ -216,6 +216,7 @@ class _WaterfallPageState extends State<WaterfallPage> {
                         api: widget.api,
                         allImages: _items,
                         initialIndex: index,
+                        onLoadMore: _loadMoreImages,
                       ),
                     ),
                   );
