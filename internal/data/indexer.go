@@ -147,7 +147,7 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 	for _, f := range r.File {
 		// ZIP paths are always forward-slash separated
 		// Performance: Avoid allocation-heavy strings.Split/Join in tight loop.
-		// LastIndexByte provides O(1) allocation path parsing.
+		// LastIndexByte enables allocation-free path parsing (still O(n) in path length).
 		cleanName := strings.TrimSuffix(f.Name, "/")
 		slashIdx := strings.LastIndexByte(cleanName, '/')
 
