@@ -3,6 +3,8 @@ name: Build Flutter APK
 on:
   push:
     branches: [ "main" ]
+    tags:
+      - '*'
     paths:
       - 'mobile/**'
       - '.github/workflows/flutter-apk.yml'
