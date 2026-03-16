@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -30,6 +31,7 @@ class _PreviewPageState extends State<PreviewPage> {
   late FileItem _currentItem;
   late PageController _pageController;
   VideoPlayerController? _videoController;
+  ChewieController? _chewieController;
   String? _textContent;
   bool _isLoadingText = false;
   bool _isFetchingMore = false;
@@ -100,12 +102,28 @@ class _PreviewPageState extends State<PreviewPage> {
   }
 
   void _initVideo() {
+    _chewieController?.dispose();
     _videoController?.dispose();
-    _videoController = VideoPlayerController.network(widget.api.getRawUrl(_currentItem.path))
+    _videoController = VideoPlayerController.networkUrl(Uri.parse(widget.api.getRawUrl(_currentItem.path)))
       ..initialize().then((_) {
         if (mounted) {
-          setState(() {});
-          _videoController!.play();
+          setState(() {
+            _chewieController = ChewieController(
+              videoPlayerController: _videoController!,
+              autoPlay: true,
+              looping: false,
+              aspectRatio: _videoController!.value.aspectRatio,
+              showControls: true,
+              materialProgressColors: ChewieProgressColors(
+                playedColor: Colors.blue,
+                handleColor: Colors.blue,
+                backgroundColor: Colors.white24,
+                bufferedColor: Colors.white54,
+              ),
+              placeholder: Container(color: Colors.black),
+              autoInitialize: true,
+            );
+          });
         }
       });
   }
@@ -124,6 +142,7 @@ class _PreviewPageState extends State<PreviewPage> {
 
   @override
   void dispose() {
+    _chewieController?.dispose();
     _videoController?.dispose();
     _pageController.dispose();
     super.dispose();
@@ -208,39 +227,11 @@ class _PreviewPageState extends State<PreviewPage> {
   }
 
   Widget _buildVideoPreview() {
-    if (_videoController == null || !_videoController!.value.isInitialized) {
+    if (_chewieController == null || !_videoController!.value.isInitialized) {
       return const Center(child: CircularProgressIndicator());
     }
     return Center(
-      child: AspectRatio(
-        aspectRatio: _videoController!.value.aspectRatio,
-        child: Stack(
-          alignment: Alignment.bottomCenter,
-          children: [
-            VideoPlayer(_videoController!),
-            VideoProgressIndicator(_videoController!, allowScrubbing: true),
-            _buildVideoControls(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVideoControls() {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 50),
-      reverseDuration: const Duration(milliseconds: 200),
-      child: _videoController!.value.isPlaying
-          ? const SizedBox.shrink()
-          : Container(
-              color: Colors.black26,
-              child: Center(
-                child: IconButton(
-                  icon: const Icon(Icons.play_arrow, color: Colors.white, size: 64),
-                  onPressed: () => setState(() => _videoController!.play()),
-                ),
-              ),
-            ),
+      child: Chewie(controller: _chewieController!),
     );
   }
 
