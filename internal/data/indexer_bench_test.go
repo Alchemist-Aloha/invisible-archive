@@ -1,6 +1,7 @@
 package data
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -41,6 +42,72 @@ func BenchmarkPathParsingIndexByte(b *testing.B) {
 			}
 			_ = name
 			_ = parent
+		}
+	}
+}
+
+func BenchmarkPathParsingJoin(b *testing.B) {
+	relZipPath := "some/rel/zip/path.zip"
+	for i := 0; i < b.N; i++ {
+		for _, path := range testPaths {
+			cleanName := strings.TrimSuffix(path, "/")
+			slashIdx := strings.LastIndexByte(cleanName, '/')
+			var name, parent string
+			if slashIdx != -1 {
+				name = cleanName[slashIdx+1:]
+				parent = cleanName[:slashIdx]
+			} else {
+				name = cleanName
+				parent = ""
+			}
+			_ = name
+			_ = parent
+
+			parentPath := "/" + filepath.Join(relZipPath, parent)
+			fullPath := "/" + filepath.Join(relZipPath, path)
+
+			_ = parentPath
+			_ = fullPath
+		}
+	}
+}
+
+func BenchmarkPathParsingConcat(b *testing.B) {
+	relZipPath := "some/rel/zip/path.zip"
+	for i := 0; i < b.N; i++ {
+		for _, path := range testPaths {
+			cleanName := strings.TrimSuffix(path, "/")
+			slashIdx := strings.LastIndexByte(cleanName, '/')
+			var name, parent string
+			if slashIdx != -1 {
+				name = cleanName[slashIdx+1:]
+				parent = cleanName[:slashIdx]
+			} else {
+				name = cleanName
+				parent = ""
+			}
+			_ = name
+			_ = parent
+
+			var parentPath string
+			if parent == "" {
+				parentPath = "/" + relZipPath
+			} else if relZipPath == "" {
+				parentPath = "/" + parent
+			} else {
+				parentPath = "/" + relZipPath + "/" + parent
+			}
+
+			cleanFName := strings.TrimSuffix(path, "/")
+			var fullPath string
+			if relZipPath == "" {
+				fullPath = "/" + cleanFName
+			} else {
+				fullPath = "/" + relZipPath + "/" + cleanFName
+			}
+
+			_ = parentPath
+			_ = fullPath
 		}
 	}
 }
