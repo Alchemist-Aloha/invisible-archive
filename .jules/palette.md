@@ -4,3 +4,6 @@
 ## 2024-10-25 - ARIA Labels on Icon-Only Buttons
 **Learning:** `title` attributes on icon-only buttons are often insufficient for screen readers without a corresponding `aria-label`.
 **Action:** Always ensure icon-only buttons have an explicit `aria-label`, even if they already have a `title`.
+## 2026-03-16 - [Empty States]
+**Learning:** Empty states should explain the context (e.g., empty search vs empty folder) and provide contextual actions to avoid "dead ends" for users, while hiding unnecessary actions when at the root directory.
+**Action:** Always provide descriptive text and relevant primary actions (like 'Clear Search' or 'Back to Library') when designing empty states, ensuring buttons have proper keyboard accessibility focus states.
