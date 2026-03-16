@@ -1,4 +1,4 @@
-name: Build Flutter APK
+name: Build Flutter
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
       - '*'
     paths:
       - 'mobile/**'
-      - '.github/workflows/flutter-apk.yml'
+      - '.github/workflows/**'
   pull_request:
     branches: [ "main" ]
     paths:
@@ -15,9 +15,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -41,10 +40,9 @@ jobs:
           flutter pub get
 
       - name: Build APK
-        timeout-minutes: 20
         run: |
           cd mobile
-          flutter build apk --release --no-pub
+          flutter build apk --release
 
       - name: Rename APK for Release
         if: startsWith(github.ref, 'refs/tags/')
@@ -58,18 +56,43 @@ jobs:
           path: mobile/build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
 
-      - name: Create Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
-          files: mobile/build/app/outputs/flutter-apk/invisible-archive-android-${{ github.ref_name }}.apk
-          draft: false
-          prerelease: false
-          generate_release_notes: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          flutter-version: '3.x'
+          channel: 'stable'
+          cache: true
+
+      - name: Get dependencies
+        run: |
+          cd mobile
+          flutter pub get
+
+      - name: Build Windows
+        run: |
+          cd mobile
+          flutter build windows --release
+
+      - name: Compress Windows Build
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          Compress-Archive -Path mobile\build\windows\runner\Release\* -DestinationPath mobile\build\windows\runner\Release\invisible-archive-windows-${{ github.ref_name }}.zip
+
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-windows
+          path: mobile\build\windows\runner\Release\*.zip
+          if-no-files-found: error
+
   release:
-    needs: build
+    needs: [build-android, build-windows]
     if: startsWith(github.ref, 'refs/tags/')
     runs-on: ubuntu-latest
     permissions:
