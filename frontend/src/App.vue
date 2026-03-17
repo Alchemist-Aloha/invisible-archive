@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useQuery } from '@tanstack/vue-query';
-import { AlertCircle } from 'lucide-vue-next';
+import { AlertCircle, FolderOpen, Search } from 'lucide-vue-next';
 import { fetchList, searchFiles } from './api';
 import { useTheme } from './composables/useTheme';
 import { useLayout } from './composables/useLayout';
@@ -179,10 +179,27 @@ watch(currentPath, () => {
         
         <!-- Empty State UI -->
         <div v-else-if="!showLoading && !error" class="h-full flex flex-col items-center justify-center p-12 text-center">
-          <h3 class="text-lg font-bold text-slate-700 dark:text-dracula-200 mb-2">No items found</h3>
+          <div class="w-24 h-24 bg-white dark:bg-dracula-800 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-sm border border-slate-100 dark:border-dracula-600">
+            <Search v-if="isSearching" class="w-12 h-12 text-slate-300 dark:text-dracula-400" />
+            <FolderOpen v-else class="w-12 h-12 text-slate-300 dark:text-dracula-400" />
+          </div>
+          <h3 class="text-xl font-bold text-slate-800 dark:text-dracula-100 mb-2">
+            {{ isSearching ? 'No results found' : 'This folder is empty' }}
+          </h3>
+          <p class="text-slate-500 dark:text-dracula-400 mb-8 max-w-sm text-sm">
+            {{ isSearching ? `We couldn't find anything matching "${searchQuery}"` : 'There are no files or subfolders here.' }}
+          </p>
+          <button
+            v-if="isSearching"
+            @click="() => { searchQuery = ''; handleSearch(); }"
+            class="px-6 py-2.5 bg-white dark:bg-dracula-800 border border-slate-200 dark:border-dracula-600 text-slate-600 dark:text-dracula-200 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-dracula-700 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none shadow-sm"
+          >
+            Clear Search
+          </button>
           <button 
+            v-else-if="currentPath !== '/'"
             @click="handleNavigate('/')"
-            class="mt-8 px-6 py-2.5 bg-white dark:bg-dracula-800 border border-slate-200 dark:border-dracula-600 text-slate-600 dark:text-dracula-200 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-dracula-700 transition-colors"
+            class="px-6 py-2.5 bg-white dark:bg-dracula-800 border border-slate-200 dark:border-dracula-600 text-slate-600 dark:text-dracula-200 rounded-xl text-xs font-bold hover:bg-slate-50 dark:hover:bg-dracula-700 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none shadow-sm"
           >
             Back to Library
           </button>
