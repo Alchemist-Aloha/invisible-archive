@@ -187,24 +187,18 @@ class _ExplorerPageState extends State<ExplorerPage> {
             },
           );
         } else {
-          // List views also benefit from limited width on large screens
-          return Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 800),
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(vertical: 8),
-                itemCount: explorer.items.length,
-                itemBuilder: (context, index) {
-                  final item = explorer.items[index];
-                  return FileItemWidget(
-                    item: item,
-                    layout: settings.layoutMode,
-                    api: explorer.api,
-                    onTap: () => _handleItemTap(context, item, explorer),
-                  );
-                },
-              ),
-            ),
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            itemCount: explorer.items.length,
+            itemBuilder: (context, index) {
+              final item = explorer.items[index];
+              return FileItemWidget(
+                item: item,
+                layout: settings.layoutMode,
+                api: explorer.api,
+                onTap: () => _handleItemTap(context, item, explorer),
+              );
+            },
           );
         }
       },

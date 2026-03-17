@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
 import 'package:photo_view/photo_view.dart';
@@ -177,30 +178,57 @@ class _PreviewPageState extends State<PreviewPage> {
   }
 
   Widget _buildGallery() {
-    return PhotoViewGallery.builder(
-      scrollPhysics: const BouncingScrollPhysics(),
-      builder: (BuildContext context, int index) {
-        final item = widget.allImages![index];
-        return PhotoViewGalleryPageOptions(
-          imageProvider: CachedNetworkImageProvider(widget.api.getRawUrl(item.path)),
-          initialScale: PhotoViewComputedScale.contained,
-          minScale: PhotoViewComputedScale.contained * 0.8,
-          maxScale: PhotoViewComputedScale.covered * 2,
-          heroAttributes: PhotoViewHeroAttributes(tag: item.path),
-        );
+    return Shortcuts(
+      shortcuts: <ShortcutActivator, Intent>{
+        const SingleActivator(LogicalKeyboardKey.arrowLeft): const ScrollIntent(direction: AxisDirection.left),
+        const SingleActivator(LogicalKeyboardKey.arrowRight): const ScrollIntent(direction: AxisDirection.right),
       },
-      itemCount: widget.allImages!.length,
-      loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
-      backgroundDecoration: const BoxDecoration(color: Colors.black),
-      pageController: _pageController,
-      onPageChanged: (index) {
-        setState(() {
-          _currentIndex = index;
-          _currentItem = widget.allImages![index];
-        });
-        _precacheImages(index);
-        _checkLoadMore(index);
-      },
+      child: Actions(
+        actions: <Type, Action<Intent>>{
+          ScrollIntent: CallbackAction<ScrollIntent>(onInvoke: (intent) {
+            if (intent.direction == AxisDirection.left && _currentIndex > 0) {
+              _pageController.previousPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            } else if (intent.direction == AxisDirection.right && _currentIndex < widget.allImages!.length - 1) {
+              _pageController.nextPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+            return null;
+          }),
+        },
+        child: Focus(
+          autofocus: true,
+          child: PhotoViewGallery.builder(
+            scrollPhysics: const BouncingScrollPhysics(),
+            builder: (BuildContext context, int index) {
+              final item = widget.allImages![index];
+              return PhotoViewGalleryPageOptions(
+                imageProvider: CachedNetworkImageProvider(widget.api.getRawUrl(item.path)),
+                initialScale: PhotoViewComputedScale.contained,
+                minScale: PhotoViewComputedScale.contained * 0.8,
+                maxScale: PhotoViewComputedScale.covered * 2,
+                heroAttributes: PhotoViewHeroAttributes(tag: item.path),
+              );
+            },
+            itemCount: widget.allImages!.length,
+            loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
+            backgroundDecoration: const BoxDecoration(color: Colors.black),
+            pageController: _pageController,
+            onPageChanged: (index) {
+              setState(() {
+                _currentIndex = index;
+                _currentItem = widget.allImages![index];
+              });
+              _precacheImages(index);
+              _checkLoadMore(index);
+            },
+          ),
+        ),
+      ),
     );
   }
 
