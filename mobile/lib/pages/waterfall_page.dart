@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import '../models.dart';
 import '../api.dart';
+import '../widgets/waterfall_item.dart';
 import 'preview_page.dart';
 
 class WaterfallPage extends StatefulWidget {
@@ -201,45 +201,23 @@ class _WaterfallPageState extends State<WaterfallPage> {
             }
 
             final item = _items[index];
-            return Card(
-              margin: EdgeInsets.zero,
-              elevation: 0,
-              clipBehavior: Clip.antiAlias,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              child: InkWell(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => PreviewPage(
-                        item: item,
-                        api: widget.api,
-                        allImages: _items,
-                        initialIndex: index,
-                        onLoadMore: _loadMoreImages,
-                      ),
-                    ),
-                  );
-                },
-                child: CachedNetworkImage(
-                  imageUrl: widget.api.getThumbUrl(item.path),
-                  placeholder: (context, url) => AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
-                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                      child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            return WaterfallItemWidget(
+              item: item,
+              api: widget.api,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PreviewPage(
+                      item: item,
+                      api: widget.api,
+                      allImages: _items,
+                      initialIndex: index,
+                      onLoadMore: _loadMoreImages,
                     ),
                   ),
-                  errorWidget: (context, url, error) => AspectRatio(
-                    aspectRatio: 1,
-                    child: Container(
-                      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
-                      child: const Icon(Icons.image_not_supported),
-                    ),
-                  ),
-                  fit: BoxFit.cover,
-                ),
-              ),
+                );
+              },
             );
           },
         );

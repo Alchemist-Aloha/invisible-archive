@@ -143,20 +143,21 @@ watch(currentPath, () => {
       <div class="absolute top-0 left-0 right-0 h-0.5 sm:h-1 z-30 overflow-hidden pointer-events-none">
         <div 
           v-show="showLoading" 
-          class="w-full h-full bg-blue-500 dark:bg-dracula-purple origin-left loading-bar"
+          class="w-full h-full bg-gradient-to-r from-transparent via-blue-500 to-transparent dark:via-dracula-purple origin-left loading-bar"
         ></div>
       </div>
 
       <!-- Connection Error UI -->
-      <div v-if="error" class="flex-1 flex items-center justify-center p-6 bg-slate-50 dark:bg-dracula-700">
-        <div class="max-w-md w-full p-8 bg-white dark:bg-dracula-800 rounded-[32px] shadow-2xl shadow-slate-200/50 dark:shadow-black/50 border border-slate-100 dark:border-dracula-600 text-center transform transition-all duration-500">
-          <div class="w-20 h-20 bg-rose-50 dark:bg-rose-900/20 rounded-3xl flex items-center justify-center mx-auto mb-6">
-            <AlertCircle class="w-10 h-10 text-rose-500" />
+      <div v-if="error" class="flex-1 flex items-center justify-center p-6 bg-slate-50/50 dark:bg-dracula-700/50">
+        <div class="max-w-md w-full p-10 bg-white dark:bg-dracula-800 rounded-[40px] shadow-[0_32px_64px_-16px_rgba(0,0,0,0.1)] dark:shadow-black/50 border border-slate-200/60 dark:border-dracula-600/60 text-center transform transition-all duration-500 animate-in fade-in zoom-in-95">
+          <div class="w-24 h-24 bg-rose-50 dark:bg-rose-900/20 rounded-[32px] flex items-center justify-center mx-auto mb-8 relative">
+            <div class="absolute inset-0 bg-rose-500 blur-2xl opacity-10 animate-pulse"></div>
+            <AlertCircle class="w-12 h-12 text-rose-500 relative" />
           </div>
-          <h2 class="text-xl font-black text-slate-800 dark:text-dracula-100 mb-3">Service Unavailable</h2>
-          <p class="text-slate-500 dark:text-dracula-400 mb-8 text-sm leading-relaxed">The archive engine is currently unreachable.</p>
-          <button @click="() => refetch()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white rounded-2xl text-sm font-bold shadow-lg shadow-blue-500/25 transition-all">
-            Reconnect to Engine
+          <h2 class="text-2xl font-black text-slate-800 dark:text-dracula-100 mb-4 tracking-tight">System Offline</h2>
+          <p class="text-slate-500 dark:text-dracula-400 mb-10 text-sm leading-relaxed font-medium">The archive engine is currently unreachable. Check your network or server status.</p>
+          <button @click="() => refetch()" class="w-full py-5 bg-slate-900 dark:bg-dracula-purple hover:bg-slate-800 dark:hover:bg-dracula-purple/80 active:scale-[0.98] text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] shadow-2xl shadow-slate-900/20 dark:shadow-dracula-purple/20 transition-all">
+            Retry Connection
           </button>
         </div>
       </div>

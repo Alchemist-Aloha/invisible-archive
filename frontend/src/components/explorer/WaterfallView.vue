@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
 import { useInfiniteScroll, useElementSize } from '@vueuse/core';
-import { fetchRandom, getThumbUrl, getRawUrl } from '../../api';
+import { fetchRandom } from '../../api';
 import type { FileItem } from '../../types';
 import { Loader2, ImageOff, RefreshCw } from 'lucide-vue-next';
+import WaterfallItem from './WaterfallItem.vue';
 
 const props = defineProps<{
   path: string;
@@ -32,9 +33,13 @@ const columnCount = computed(() => {
 
 // Distribute items into columns for a stable masonry layout
 const columns = computed(() => {
-  const cols: FileItem[][] = Array.from({ length: columnCount.value }, () => []);
+  const count = columnCount.value;
+  const cols: FileItem[][] = Array.from({ length: count }, () => []);
+  
+  // Since we don't have heights, we'll use a balanced count-based distribution
+  // but we'll try to randomize slightly for variety or just stick to a stable one.
   items.value.forEach((item, index) => {
-    cols[index % columnCount.value].push(item);
+    cols[index % count].push(item);
   });
   return cols;
 });
@@ -90,74 +95,58 @@ const handleItemClick = (item: FileItem) => {
 </script>
 
 <template>
-  <div ref="containerRef" class="h-full flex flex-col overflow-hidden">
-    <!-- Header/Actions -->
-    <div class="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-slate-200/40 dark:border-dracula-600/40 bg-white/30 dark:bg-dracula-800/30 backdrop-blur-sm sticky top-0 z-10">
-      <div class="flex items-center gap-2">
-        <div class="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-        <h2 class="text-sm font-bold text-slate-600 dark:text-dracula-200 uppercase tracking-widest">Discovery</h2>
+  <div ref="containerRef" class="h-full flex flex-col overflow-hidden bg-slate-50/50 dark:bg-dracula-700/50">
+    <!-- Polished Discovery Header -->
+    <div class="flex items-center justify-between px-6 sm:px-10 py-5 border-b border-slate-200/50 dark:border-dracula-600/40 bg-white/40 dark:bg-dracula-800/40 backdrop-blur-xl sticky top-0 z-10">
+      <div class="flex items-center gap-3">
+        <div class="relative">
+          <div class="absolute inset-0 bg-blue-500 blur-md opacity-20 animate-pulse"></div>
+          <div class="w-3 h-3 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50 relative"></div>
+        </div>
+        <div>
+          <h2 class="text-xs font-black text-slate-400 dark:text-dracula-400 uppercase tracking-[0.2em]">Discovery</h2>
+          <p class="text-[10px] text-slate-400/60 dark:text-dracula-500 font-bold uppercase tracking-widest mt-0.5">Random gems from your library</p>
+        </div>
       </div>
       <button 
         @click="loadMore(true)"
-        class="p-2 hover:bg-slate-100 dark:hover:bg-dracula-700 rounded-lg text-slate-500 dark:text-dracula-400 transition-all active:scale-95 group"
-        title="Refresh Discovery"
+        class="flex items-center gap-2 px-3 py-2 bg-white/50 dark:bg-dracula-700/50 hover:bg-white dark:hover:bg-dracula-600 border border-slate-200/50 dark:border-dracula-600/50 rounded-xl text-xs font-bold text-slate-600 dark:text-dracula-200 transition-all active:scale-95 group shadow-sm hover:shadow-md"
       >
-        <RefreshCw class="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+        <RefreshCw :class="['w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-700', isLoading ? 'animate-spin' : '']" />
+        <span>Reshuffle</span>
       </button>
     </div>
 
-    <div ref="scrollRef" class="p-4 sm:p-6 lg:p-8 flex-1 overflow-y-auto no-scrollbar" id="file-grid">
-      <div v-if="items.length === 0 && !isLoading" class="flex flex-col items-center justify-center py-32 text-slate-400 dark:text-dracula-400">
-        <div class="relative mb-6">
-          <ImageOff class="w-16 h-16 opacity-10" />
-          <div class="absolute inset-0 flex items-center justify-center">
-            <div class="w-8 h-8 border-2 border-slate-200 dark:border-dracula-600 rounded-lg rotate-12"></div>
-          </div>
+    <div ref="scrollRef" class="p-4 sm:p-8 lg:p-12 flex-1 overflow-y-auto no-scrollbar" id="file-grid">
+      <div v-if="items.length === 0 && !isLoading" class="flex flex-col items-center justify-center py-40 text-slate-400 dark:text-dracula-400 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div class="relative mb-8">
+          <div class="absolute inset-0 bg-slate-200 dark:bg-dracula-600 blur-3xl opacity-20 scale-150"></div>
+          <ImageOff class="w-20 h-20 opacity-10 relative" />
         </div>
-        <p class="font-medium text-slate-500 dark:text-dracula-300">No images found under this directory</p>
-        <p class="text-xs mt-2 opacity-60">Try navigating to a different folder or archive</p>
+        <h3 class="text-lg font-black text-slate-800 dark:text-dracula-100 mb-2">The trail is empty</h3>
+        <p class="text-sm text-slate-500 dark:text-dracula-400 font-medium opacity-60">No images were found in the selected explorer path.</p>
+        <button @click="loadMore(true)" class="mt-8 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest shadow-xl shadow-blue-500/20 transition-all active:scale-95">
+          Try Again
+        </button>
       </div>
 
       <!-- Stable Masonry Layout -->
-      <div class="flex gap-4 items-start">
+      <div class="flex gap-4 sm:gap-6 lg:gap-8 items-start max-w-[2000px] mx-auto">
         <div 
           v-for="(columnItems, colIndex) in columns" 
           :key="colIndex"
-          class="flex-1 flex flex-col gap-4"
+          class="flex-1 flex flex-col gap-4 sm:gap-6 lg:gap-8"
         >
           <div 
-            v-for="item in columnItems" 
+            v-for="(item, itemIndex) in columnItems" 
             :key="item.path"
-            class="animate-in fade-in zoom-in-95 duration-500"
+            class="animate-in fade-in zoom-in-95 duration-700"
+            :style="{ animationDelay: `${itemIndex * 50}ms` }"
           >
-            <button
-              type="button"
-              @click="handleItemClick(item)"
-              class="relative w-full group overflow-hidden rounded-2xl bg-slate-100 dark:bg-dracula-800 border border-slate-200/50 dark:border-dracula-700/50 hover:border-blue-500/50 dark:hover:border-dracula-purple/50 transition-all duration-300 shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 active:scale-[0.98] block"
-              :data-pswp-src="getRawUrl(item.path)"
-            >
-              <!-- Aspect Ratio Placeholder -->
-              <div class="relative w-full bg-slate-200 dark:bg-dracula-700 min-h-[100px]">
-                <img 
-                  :src="getThumbUrl(item.path)"
-                  class="w-full h-auto block transition-transform duration-700 group-hover:scale-110"
-                  loading="lazy"
-                  :alt="item.name"
-                >
-              </div>
-              
-              <!-- Refined Hover Overlay -->
-              <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col justify-end p-4 text-left translate-y-2 group-hover:translate-y-0">
-                <p class="text-white text-xs font-bold truncate mb-1">
-                  {{ item.name }}
-                </p>
-                <div class="flex items-center gap-2">
-                  <span class="text-[10px] text-white/70 font-medium px-1.5 py-0.5 rounded bg-white/10 backdrop-blur-md">
-                    {{ (item.size / 1024 / 1024).toFixed(1) }} MB
-                  </span>
-                </div>
-              </div>
-            </button>
+            <WaterfallItem 
+              :item="item" 
+              @click="handleItemClick(item)" 
+            />
           </div>
         </div>
       </div>
