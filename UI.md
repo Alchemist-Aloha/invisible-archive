@@ -35,9 +35,19 @@ This document tracks the aesthetic decisions, layout optimizations, and accessib
 *   **Integrated History:** Opening an image pushes a state to the browser history, allowing the "Back" button or gesture to close the gallery naturally.
 *   **Dynamic Resolution:** Aspect ratios are recalculated on-the-fly as high-res images load to ensure perfect fit and zoom stability.
 
+### Waterfall (Discovery) View
+*   **Masonry Layout:** Uses a multi-column flexbox approach for a stable, Pinterest-style staggered grid that handles varying image aspect ratios elegantly.
+*   **Randomized Exploration:** Fetches a random set of items from the current directory (recursive) to encourage "discovery" of hidden gems in large libraries.
+*   **Visual Polish:** Cards feature glassmorphism-inspired overlays, subtle depth shadows (`shadow-[0_4px_20px_-10px]`), and smooth scale transitions on hover.
+
 ---
 
 ## 4. Performance & Loading
+*   **Swap & Unload Strategy:** To handle high-resolution original images without memory bloat:
+    *   **Tier 1:** A 200px low-resolution thumbnail is always loaded as the base layer.
+    *   **Tier 2:** When an item is within ~400px of the viewport, the original high-resolution image begins loading in the background.
+    *   **Transition:** Once loaded, the high-res image is cross-faded over the thumbnail.
+    *   **Memory Guard:** When an item leaves the viewport, the high-res image is unmounted from the DOM (Web) or evicted from the memory cache (Mobile) to free up resources.
 *   **Non-Blocking Progress Bar:** Replaced full-screen blur loaders with a sleek, indeterminate progress bar pinned to the top of the content area.
 *   **Background Preloading:** When previewing an item, the engine automatically pre-fetches the next two images in the background to ensure instantaneous transitions.
 *   **Virtualization:** `TanStack Virtual` handles 100k+ item lists with minimal DOM nodes, ensuring 60fps scrolling even on low-end mobile devices.

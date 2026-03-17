@@ -50,56 +50,56 @@ This document maps the repository layout and explains the responsibility of each
 
 ### Build and toolchain
 
-- frontend/package.json: Frontend scripts and dependency manifest (Vue, Vite, TanStack, PhotoSwipe, Plyr, Tailwind).
+- frontend/package.json: Frontend scripts and dependency manifest.
 - frontend/package-lock.json: npm lockfile for deterministic npm installs.
 - frontend/pnpm-lock.yaml: pnpm lockfile for deterministic pnpm installs.
-- frontend/tsconfig.json: TypeScript project references (app + node configs).
-- frontend/tsconfig.app.json: Browser-side TypeScript compiler options and strictness rules.
-- frontend/tsconfig.node.json: Node-side TypeScript options for tooling files (for example Vite config).
-- frontend/postcss.config.js: PostCSS pipeline (Tailwind + Autoprefixer).
-- frontend/tailwind.config.js: Tailwind content scanning and theme extension entry.
-- frontend/vite.config.ts: Vite setup with Vue plugin and PWA plugin/manifest/workbox settings.
-- frontend/README.md: Default Vite/Vue template readme.
+- frontend/tsconfig.json: TypeScript project references.
+- frontend/tsconfig.app.json: Browser-side TypeScript compiler options.
+- frontend/tsconfig.node.json: Node-side TypeScript options for tooling.
+- frontend/postcss.config.js: PostCSS pipeline.
+- frontend/tailwind.config.js: Tailwind configuration.
+- frontend/vite.config.ts: Vite setup with Vue and PWA plugins.
 
 ### App shell and source
 
-- frontend/index.html: SPA host HTML, mobile/PWA meta tags, and app mount script.
-- frontend/src/main.ts: Vue bootstrap and plugin registration (Vue Query).
-- frontend/src/api.ts: Typed frontend API client, capability constants, URL builders, and fetch helpers.
-- frontend/src/App.vue: Main application container (navigation/search/layout modes, previews, gestures, dark mode, history sync).
-- frontend/src/style.css: Global Tailwind v4 theme tokens, color variables, base styles, and shared animations.
+- frontend/index.html: SPA host HTML.
+- frontend/src/main.ts: Vue bootstrap and plugin registration.
+- frontend/src/api/index.ts: Typed frontend API client and URL builders.
+- frontend/src/App.vue: Main application container (navigation/search/layout modes).
+- frontend/src/style.css: Global Tailwind v4 theme and base styles.
+- frontend/src/composables/: Shared logic (useLayout, useNavigation, usePreview, useTheme).
+- frontend/src/types/index.ts: TypeScript interface definitions for API responses.
 
 ### Frontend components
 
-- frontend/src/components/Breadcrumbs.vue: Path breadcrumb navigation component.
-- frontend/src/components/FileGrid.vue: Virtualized grid/list/details renderer with item interactions and thumbnail fallback.
-- frontend/src/components/FileIcon.vue: File-type icon selector from capabilities/extension.
-- frontend/src/components/HelloWorld.vue: Unused scaffold component from template.
+#### Explorer
+- frontend/src/components/explorer/Breadcrumbs.vue: Path breadcrumb navigation.
+- frontend/src/components/explorer/ExplorerHeader.vue: Search and layout control header.
+- frontend/src/components/explorer/FileGrid.vue: Virtualized grid/list/details renderer.
+- frontend/src/components/explorer/FileItemGrid.vue: Individual grid item component.
+- frontend/src/components/explorer/FileItemRow.vue: Individual list/details row component.
+- frontend/src/components/explorer/WaterfallView.vue: Random discovery view with masonry layout.
+- frontend/src/components/explorer/WaterfallItem.vue: Viewport-aware item for Waterfall view (Swap & Unload).
 
-### Frontend assets
+#### Preview
+- frontend/src/components/preview/FilePreview.vue: Main preview overlay controller.
+- frontend/src/components/preview/TextPreview.vue: Raw text content renderer.
+- frontend/src/components/preview/VideoPreview.vue: Video player (Plyr) wrapper.
 
-- frontend/src/assets/hero.png: Template/demo hero image asset.
-- frontend/src/assets/vite.svg: Vite logo asset.
-- frontend/src/assets/vue.svg: Vue logo asset.
-- frontend/public/favicon.svg: Site favicon.
-- frontend/public/icons.svg: SVG sprite sheet used by template/demo UI.
-- frontend/public/manifest.webmanifest: PWA manifest served as static asset.
-- frontend/public/pwa-192x192.png: 192px PWA icon.
-- frontend/public/pwa-512x512.png: 512px PWA icon.
+#### UI
+- frontend/src/components/ui/FileIcon.vue: File-type icon component.
+
+## mobile (Flutter)
+
+- mobile/lib/main.dart: Flutter app entrypoint.
+- mobile/lib/api.dart: Flutter API client wrapper.
+- mobile/lib/models.dart: Data models for file items and API responses.
+- mobile/lib/pages/: Application screens (Explorer, Preview, Settings, Waterfall).
+- mobile/lib/providers/: State management (ExplorerProvider, SettingsProvider).
+- mobile/lib/widgets/breadcrumbs_widget.dart: Mobile breadcrumb navigation.
+- mobile/lib/widgets/file_item_widget.dart: Item renderer for explorer grid/list.
+- mobile/lib/widgets/waterfall_item.dart: Viewport-aware item for Waterfall view (Swap & Unload).
 
 ## test_library
 
-ZIP fixtures used for local/manual validation and test scenarios around archive traversal and media handling.
-
-- test_library/basic.zip: Basic archive fixture for simple path and listing behavior.
-- test_library/implicit.zip: Fixture likely covering implicit root-folder behavior.
-- test_library/large.zip: Larger archive fixture for performance/streaming checks.
-- test_library/media.zip: Media-heavy fixture for render/stream capability paths.
-- test_library/mixed.zip: Mixed-content fixture across multiple file types.
-- test_library/nested.zip: Nested-directory archive fixture for deep path resolution.
-- test_library/photos.zip: Image-focused fixture for thumbnails/gallery behavior.
-
-## Notes
-
-- Generated files: internal/data/db.go, internal/data/models.go, and internal/data/queries.sql.go are generated by sqlc from internal/data/schema.sql and internal/data/queries.sql.
-- Runtime data files (for example archive.db and thumbnail cache) are not committed; they are created at runtime in CACHE_DIR.
+ZIP fixtures used for local/manual validation and test scenarios.

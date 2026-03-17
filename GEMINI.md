@@ -18,6 +18,7 @@ When making changes, optimize for correctness and operational stability first, t
 
 Primary rule:
 - Preserve archive transparency end-to-end. If a change breaks archive-as-folder behavior, it is a regression.
+- **Memory Management:** Use the "Swap & Unload" strategy for high-resolution assets in long lists (e.g., Waterfall view). Always provide a low-res thumbnail base and only load/overlay the original image when in proximity to the viewport, ensuring it is unmounted/evicted when out of view.
 
 ## Architecture Snapshot
 

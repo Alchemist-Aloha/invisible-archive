@@ -25,6 +25,10 @@ The mobile app mirrors the backend's core feature: archives (ZIP files) are trea
 
 ### 2. High-Performance Image Viewing
 - **Dynamic Scrolling**: Uses `PhotoViewGallery` to allow swiping through all images within a directory or search result.
+- **Swap & Unload Strategy (Waterfall)**: In the discovery view, the app uses a multi-tier loading system:
+    - **Tier 1**: Always shows a 200px low-resolution thumbnail as the base.
+    - **Tier 2**: Starts a delayed background fetch for the original high-resolution image when the card is stable.
+    - **Memory Guard**: Explicitly evicts high-res images from the memory cache (`PaintingBinding.instance.imageCache.evict`) when the card is disposed, preventing memory exhaustion during deep scrolls.
 - **Intelligent Preloading**: Implements a manual preloading strategy in `PreviewPage`. When viewing an image, the app automatically precaches the next and previous images in the background to ensure instantaneous swiping.
 - **Lazy Loading**: Utilizes `CachedNetworkImage` for all thumbnails and full-size images, reducing data usage and ensuring smooth scrolling by only loading images as they enter the viewport.
 
