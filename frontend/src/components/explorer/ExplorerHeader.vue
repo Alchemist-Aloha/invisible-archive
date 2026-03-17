@@ -61,6 +61,7 @@ const emit = defineEmits<{
         @keyup.enter="emit('search')"
         type="text" 
         placeholder="Search..."
+        aria-label="Search"
         class="w-full pl-9 pr-8 py-2 bg-slate-100 dark:bg-dracula-800 border border-transparent focus:bg-white dark:focus:bg-dracula-700 focus:border-blue-500/30 focus:ring-4 focus:ring-blue-500/5 rounded-xl text-sm transition-all outline-none placeholder:text-slate-400 dark:text-dracula-300"
       >
       <button 
