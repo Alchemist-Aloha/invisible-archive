@@ -78,11 +78,22 @@ jobs:
           cd mobile
           flutter build windows --release
 
-      - name: Upload Windows Artifact
+      - name: Create Portable Zip
+        run: |
+          cd mobile/build/windows/x64/runner/Release
+          7z a ../../../../../invisible-archive-windows-portable.zip *
+
+      - name: Compile Installer
+        run: |
+          iscc mobile/windows/installer.iss
+
+      - name: Upload Windows Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: release-windows
-          path: mobile\build\windows\x64\runner\Release\*.exe
+          path: |
+            mobile/invisible-archive-windows-portable.zip
+            mobile/windows/InvisibleArchiveInstaller.exe
           if-no-files-found: error
 
   release:
