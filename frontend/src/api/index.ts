@@ -22,7 +22,8 @@ export const fetchRandom = async (path: string, limit: number = 50): Promise<Fil
 
 export const getRawUrl = (path: string, download: boolean = false) => {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
+  // Optimize: avoid array allocations and reduce GC by using encodeURIComponent and replacing encoded slashes
+  const encodedPath = encodeURIComponent(cleanPath).replaceAll('%2F', '/');
   let url = `${api.defaults.baseURL}/raw/${encodedPath}`;
   if (download) {
     url += '?download=1';
@@ -36,7 +37,8 @@ export const getThumbUrl = (path: string) => {
 
 export const fetchText = async (path: string): Promise<string> => {
   const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-  const encodedPath = cleanPath.split('/').map(encodeURIComponent).join('/');
+  // Optimize: avoid array allocations and reduce GC by using encodeURIComponent and replacing encoded slashes
+  const encodedPath = encodeURIComponent(cleanPath).replaceAll('%2F', '/');
   const { data } = await api.get<string>(`/raw/${encodedPath}`, { responseType: 'text' });
   return data;
 };
