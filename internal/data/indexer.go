@@ -21,10 +21,10 @@ type Indexer struct {
 	queries     *Queries
 	watcher     *fsnotify.Watcher
 	library     string
-	zipSem      chan struct{} // Concurrency limit for ZIPs
-	dirSem      chan struct{} // Concurrency limit for Dirs
+	zipSem      chan struct{}     // Concurrency limit for ZIPs
+	dirSem      chan struct{}     // Concurrency limit for Dirs
 	Discovery   func(path string) // Callback for new images
-	activeTasks int32         // Atomic counter for tracking
+	activeTasks int32             // Atomic counter for tracking
 }
 
 func NewIndexer(dbPath, library string) (*Indexer, error) {
@@ -144,14 +144,14 @@ func (idx *Indexer) indexDirectoryInternal(ctx context.Context, physicalPath str
 		caps := uint32(util.GetCapabilities(entry.Name(), info.IsDir()))
 
 		err = qtx.UpsertItem(ctx, UpsertItemParams{
-			ParentPath:  "/" + relParent,
-			Name:        entry.Name(),
-			Path:        relPath,
-			IsDir:       info.IsDir(),
-			Size:        info.Size(),
-			ModTime:     info.ModTime().Unix(),
+			ParentPath:   "/" + relParent,
+			Name:         entry.Name(),
+			Path:         relPath,
+			IsDir:        info.IsDir(),
+			Size:         info.Size(),
+			ModTime:      info.ModTime().Unix(),
 			Capabilities: int64(caps),
-			IsInsideZip: false,
+			IsInsideZip:  false,
 		})
 		if err != nil {
 			return err
@@ -220,21 +220,28 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 			parentInZip = ""
 		}
 
-		parentPath := "/" + filepath.Join(relZipPath, parentInZip)
-		fullPath := "/" + filepath.Join(relZipPath, f.Name)
+		// ⚡ BOLT: Zero-allocation path joining for tight loops
+		// Avoids massive GC overhead from filepath.Join -> filepath.Clean
+		var parentPath string
+		if parentInZip == "" {
+			parentPath = "/" + relZipPath
+		} else {
+			parentPath = "/" + relZipPath + "/" + parentInZip
+		}
+		fullPath := "/" + relZipPath + "/" + cleanName
 		isDir := f.FileInfo().IsDir()
 
 		caps := uint32(util.GetCapabilities(name, isDir))
 
 		err = qtx.UpsertItem(ctx, UpsertItemParams{
-			ParentPath:  parentPath,
-			Name:        name,
-			Path:        fullPath,
-			IsDir:       isDir,
-			Size:        int64(f.UncompressedSize64),
-			ModTime:     f.Modified.Unix(),
+			ParentPath:   parentPath,
+			Name:         name,
+			Path:         fullPath,
+			IsDir:        isDir,
+			Size:         int64(f.UncompressedSize64),
+			ModTime:      f.Modified.Unix(),
 			Capabilities: int64(caps),
-			IsInsideZip: true,
+			IsInsideZip:  true,
 		})
 		if err != nil {
 			return err

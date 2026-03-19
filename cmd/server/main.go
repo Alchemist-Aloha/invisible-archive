@@ -90,7 +90,7 @@ func main() {
 	// Start initial recursive scan
 	go func() {
 		log.Printf("INDEX: Starting initial library scan...")
-		
+
 		// Progress logger
 		stopProgress := make(chan struct{})
 		go func() {
@@ -110,7 +110,7 @@ func main() {
 		}()
 
 		indexer.IndexRecursive(context.Background(), libraryPath)
-		
+
 		close(stopProgress)
 		log.Printf("INDEX: Full scan reached all branches.")
 	}()
@@ -122,7 +122,7 @@ func main() {
 	// Middleware
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	
+
 	// Simple CORS middleware
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

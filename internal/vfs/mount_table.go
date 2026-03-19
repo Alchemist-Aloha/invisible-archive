@@ -12,13 +12,13 @@ import (
 
 // CachedArchive wraps a zip.ReadCloser with reference counting
 type CachedArchive struct {
-	Reader     *zip.ReadCloser
-	Path       string
-	refs       int32 // Atomic reference counter
-	evicted    bool  // True if removed from LRU cache
-	mu         sync.Mutex
-	Files      map[string]*zip.File
-	Dirs       map[string]bool
+	Reader  *zip.ReadCloser
+	Path    string
+	refs    int32 // Atomic reference counter
+	evicted bool  // True if removed from LRU cache
+	mu      sync.Mutex
+	Files   map[string]*zip.File
+	Dirs    map[string]bool
 }
 
 // Close decrements the reference count and closes the file if needed

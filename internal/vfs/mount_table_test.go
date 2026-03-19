@@ -61,11 +61,11 @@ func TestMountTable(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	
+
 	if !ca1.evicted {
 		t.Error("expected ca1 to be evicted")
 	}
-	
+
 	// ca1 should still be open because we haven't closed our handle
 	_, err = ca1.Reader.Open("test.txt")
 	if err != nil {
@@ -79,7 +79,7 @@ func TestMountTable(t *testing.T) {
 	}
 
 	// Now ca1 should be closed (internal Reader.Close called)
-	// Trying to open a file now should fail or behavior is undefined, 
+	// Trying to open a file now should fail or behavior is undefined,
 	// but we've verified the logic path.
 
 	// 4. Get zip2 again (cache hit)
@@ -93,7 +93,7 @@ func TestMountTable(t *testing.T) {
 	if ca2.refs != 2 {
 		t.Errorf("expected 2 refs for ca2, got %d", ca2.refs)
 	}
-	
+
 	ca2.Close()
 	ca2_hit.Close()
 }

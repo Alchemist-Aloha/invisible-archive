@@ -23,7 +23,7 @@ type Thumbnailer struct {
 	concurSem  chan struct{} // Semaphore for throttling
 	mu         sync.Mutex
 	processing singleflight.Group
-	queue      chan string   // Background generation queue
+	queue      chan string // Background generation queue
 }
 
 func NewThumbnailer(vfs *vfs.Manager, cacheDir string, maxWorkers int) (*Thumbnailer, error) {
@@ -76,7 +76,7 @@ func (t *Thumbnailer) GetThumbnail(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		defer closer.Close()
-		
+
 		stat, err := t.vfs.Stat(path)
 		var modTime time.Time
 		if err == nil {
@@ -104,7 +104,7 @@ func (t *Thumbnailer) generateInternal(path string) (string, error) {
 	// 1. FAST-PATH: Try to get metadata from SQLite first to avoid VFS Stat
 	var size int64
 	var modTime int64
-	
+
 	if t.vfs.GetIndexer() != nil {
 		item, err := t.vfs.GetIndexer().GetQueries().GetItemByPath(context.Background(), path)
 		if err == nil {

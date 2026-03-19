@@ -195,9 +195,19 @@ type zipFileInfo struct {
 	file  *zip.File
 }
 
-func (z *zipFileInfo) Name() string       { return z.name }
-func (z *zipFileInfo) Size() int64        { if z.isDir { return 0 }; return int64(z.file.UncompressedSize64) }
-func (z *zipFileInfo) Mode() os.FileMode  { if z.isDir { return os.ModeDir | 0555 }; return 0444 }
+func (z *zipFileInfo) Name() string { return z.name }
+func (z *zipFileInfo) Size() int64 {
+	if z.isDir {
+		return 0
+	}
+	return int64(z.file.UncompressedSize64)
+}
+func (z *zipFileInfo) Mode() os.FileMode {
+	if z.isDir {
+		return os.ModeDir | 0555
+	}
+	return 0444
+}
 func (z *zipFileInfo) ModTime() time.Time { return z.file.Modified }
 func (z *zipFileInfo) IsDir() bool        { return z.isDir }
 func (z *zipFileInfo) Sys() interface{}   { return nil }
@@ -264,9 +274,9 @@ func (m *Manager) GetRawReader(path string) (io.ReadSeeker, io.Closer, error) {
 			}
 
 			ss := &storeStreamSeeker{
-				sr: io.NewSectionReader(osFile, off, int64(f.UncompressedSize64)),
+				sr:     io.NewSectionReader(osFile, off, int64(f.UncompressedSize64)),
 				osFile: osFile,
-				ca: ca,
+				ca:     ca,
 			}
 			return ss, ss, nil
 		}

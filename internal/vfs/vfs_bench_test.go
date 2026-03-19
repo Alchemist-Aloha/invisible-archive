@@ -46,3 +46,33 @@ func BenchmarkVFSOpenInner(b *testing.B) {
 		ca.Close()
 	}
 }
+
+func BenchmarkPathClean(b *testing.B) {
+	paths := []string{
+		"a/b/c",
+		"a/b//c",
+		"a/../b/c",
+		"/a/b/c/",
+	}
+
+	for i := 0; i < b.N; i++ {
+		for _, p := range paths {
+			_ = filepath.Clean(p)
+		}
+	}
+}
+
+func BenchmarkPathCleanReal(b *testing.B) {
+	paths := []string{
+		"a/b/c",
+		"a/b//c",
+		"a/../b/c",
+		"/a/b/c/",
+	}
+
+	for i := 0; i < b.N; i++ {
+		for _, p := range paths {
+			_ = filepath.Clean(p)
+		}
+	}
+}

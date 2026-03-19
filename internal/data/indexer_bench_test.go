@@ -1,6 +1,7 @@
 package data
 
 import (
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -41,6 +42,52 @@ func BenchmarkPathParsingIndexByte(b *testing.B) {
 			}
 			_ = name
 			_ = parent
+		}
+	}
+}
+
+func BenchmarkPathJoin(b *testing.B) {
+	relZipPath := "test/archive.zip"
+	for i := 0; i < b.N; i++ {
+		for _, path := range testPaths {
+			cleanName := strings.TrimSuffix(path, "/")
+			slashIdx := strings.LastIndexByte(cleanName, '/')
+			var parentInZip string
+			if slashIdx != -1 {
+				parentInZip = cleanName[:slashIdx]
+			} else {
+				parentInZip = ""
+			}
+
+			_ = "/" + filepath.Join(relZipPath, parentInZip)
+			_ = "/" + filepath.Join(relZipPath, path)
+		}
+	}
+}
+
+func BenchmarkPathConcat(b *testing.B) {
+	relZipPath := "test/archive.zip"
+	for i := 0; i < b.N; i++ {
+		for _, path := range testPaths {
+			cleanName := strings.TrimSuffix(path, "/")
+			slashIdx := strings.LastIndexByte(cleanName, '/')
+			var parentInZip string
+			if slashIdx != -1 {
+				parentInZip = cleanName[:slashIdx]
+			} else {
+				parentInZip = ""
+			}
+
+			var parentPath string
+			if parentInZip == "" {
+				parentPath = "/" + relZipPath
+			} else {
+				parentPath = "/" + relZipPath + "/" + parentInZip
+			}
+			fullPath := "/" + relZipPath + "/" + cleanName
+
+			_ = parentPath
+			_ = fullPath
 		}
 	}
 }
