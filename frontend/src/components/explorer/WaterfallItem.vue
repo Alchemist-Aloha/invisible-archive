@@ -48,8 +48,9 @@ onUnmounted(() => {
     <button
       type="button"
       @click="emit('click', item)"
-      class="relative w-full group overflow-hidden rounded-[24px] bg-white dark:bg-dracula-800 border border-slate-200/60 dark:border-dracula-700/60 hover:border-blue-500 dark:hover:border-dracula-purple transition-all duration-500 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)] active:scale-[0.97] block"
+      class="relative w-full group overflow-hidden rounded-[24px] bg-white dark:bg-dracula-800 border border-slate-200/60 dark:border-dracula-700/60 hover:border-blue-500 dark:hover:border-dracula-purple transition-all duration-500 shadow-[0_4px_20px_-10px_rgba(0,0,0,0.1)] hover:shadow-[0_20px_50px_-20px_rgba(0,0,0,0.15)] active:scale-[0.97] block focus-visible:ring-4 focus-visible:ring-blue-500/50 outline-none"
       :data-pswp-src="rawUrl"
+      :aria-label="'View ' + item.name"
     >
       <!-- Glassmorphism Aspect Ratio Placeholder -->
       <div class="relative w-full bg-slate-100 dark:bg-dracula-900/40 min-h-[120px] overflow-hidden">
