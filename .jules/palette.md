@@ -7,3 +7,6 @@
 ## 2026-03-16 - [Empty States]
 **Learning:** Empty states should explain the context (e.g., empty search vs empty folder) and provide contextual actions to avoid "dead ends" for users, while hiding unnecessary actions when at the root directory.
 **Action:** Always provide descriptive text and relevant primary actions (like 'Clear Search' or 'Back to Library') when designing empty states, ensuring buttons have proper keyboard accessibility focus states.
+## 2024-10-25 - Focus Styles on Complex Visual Layers
+**Learning:** Default browser outlines are insufficient for accessibility on custom interactive UI components with complex visual layers (e.g., Waterfall view items with overlays or gradients).
+**Action:** Always explicitly add focus-visible styling (like `focus-visible:ring-4`) and appropriate `aria-label` attributes to the wrapping `<button>` to ensure keyboard focus visibility.
