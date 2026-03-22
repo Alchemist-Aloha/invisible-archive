@@ -5,3 +5,7 @@
 ## 2024-05-23 - [Zero-Allocation Path Parsing in ZIP Indexer]
 **Learning:** The `IndexZip` loop processes thousands of entries in a single operation. Utilizing allocation-heavy functions like `strings.Split` and `strings.Join` inside this tight loop causes measurable performance bottlenecks. Since ZIP internal paths are reliably forward-slash separated, we can achieve O(1) allocation overhead by replacing string array manipulations with simple string slicing using `strings.LastIndexByte`.
 **Action:** When extracting parents and filenames from absolute paths in performance-critical areas, prioritize zero-allocation slice slicing (e.g., `strings.LastIndexByte`) over allocation-generating `Split`/`Join` sequences.
+
+## 2024-05-24 - Zero-Allocation Path Construction in VFS
+**Learning:** `filepath.Join` implicitly calls `filepath.Clean`, which performs memory allocations. When called thousands of times in a tight loop like `IndexZip`, this causes a significant performance bottleneck.
+**Action:** In performance-critical VFS loops where path separators and structures are predictable (e.g., ZIP file internal paths), replace `filepath.Join` with raw string concatenation. Ensure trailing slashes and empty paths are carefully handled to maintain semantic equivalence with `filepath.Join`.

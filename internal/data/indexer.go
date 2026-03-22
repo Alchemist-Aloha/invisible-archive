@@ -207,6 +207,11 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 	defer tx.Rollback()
 	qtx := idx.queries.WithTx(tx)
 
+	basePath := "/" + filepath.ToSlash(relZipPath)
+	if relZipPath == "" || relZipPath == "." {
+		basePath = ""
+	}
+
 	for _, f := range r.File {
 		cleanName := strings.TrimSuffix(f.Name, "/")
 		slashIdx := strings.LastIndexByte(cleanName, '/')
@@ -220,8 +225,29 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 			parentInZip = ""
 		}
 
-		parentPath := "/" + filepath.Join(relZipPath, parentInZip)
-		fullPath := "/" + filepath.Join(relZipPath, f.Name)
+		// Avoid filepath.Join in tight loop due to high memory allocation
+		// overhead of its implicit filepath.Clean calls.
+		var parentPath string
+		if parentInZip == "" {
+			if basePath == "" {
+				parentPath = "/"
+			} else {
+				parentPath = basePath
+			}
+		} else {
+			parentPath = basePath + "/" + parentInZip
+		}
+
+		var fullPath string
+		if cleanName == "" {
+			if basePath == "" {
+				fullPath = "/"
+			} else {
+				fullPath = basePath
+			}
+		} else {
+			fullPath = basePath + "/" + cleanName
+		}
 		isDir := f.FileInfo().IsDir()
 
 		caps := uint32(util.GetCapabilities(name, isDir))
