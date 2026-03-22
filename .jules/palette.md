@@ -10,3 +10,6 @@
 ## 2024-10-25 - Focus Styles on Complex Visual Layers
 **Learning:** Default browser outlines are insufficient for accessibility on custom interactive UI components with complex visual layers (e.g., Waterfall view items with overlays or gradients).
 **Action:** Always explicitly add focus-visible styling (like `focus-visible:ring-4`) and appropriate `aria-label` attributes to the wrapping `<button>` to ensure keyboard focus visibility.
+## 2024-10-25 - Active States for Screen Readers
+**Learning:** Visually styled toggle buttons (like layout or theme toggles) do not convey their active state to screen readers by default.
+**Action:** Always add `:aria-pressed` attributes to toggle buttons and wrap related toggle groups in a `role="group"` with an `aria-label`.

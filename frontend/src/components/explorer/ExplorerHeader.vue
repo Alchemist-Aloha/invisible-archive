@@ -76,7 +76,11 @@ const emit = defineEmits<{
     
     <div class="flex items-center gap-1 sm:gap-2 shrink-0">
       <!-- Layout Toggle (Desktop: Full, Mobile: Cycle) -->
-      <div class="hidden sm:flex items-center bg-slate-100 dark:bg-dracula-800 p-1 rounded-xl border border-slate-200/50 dark:border-dracula-700/50">
+      <div
+        class="hidden sm:flex items-center bg-slate-100 dark:bg-dracula-800 p-1 rounded-xl border border-slate-200/50 dark:border-dracula-700/50"
+        role="group"
+        aria-label="Layout view mode"
+      >
         <button 
           @click="emit('setLayoutMode', 'grid')"
           :class="[
@@ -85,6 +89,7 @@ const emit = defineEmits<{
           ]"
           title="Grid View"
           aria-label="Grid View"
+          :aria-pressed="layoutMode === 'grid'"
         >
           <LayoutGrid class="w-4 h-4" />
         </button>
@@ -96,6 +101,7 @@ const emit = defineEmits<{
           ]"
           title="List View"
           aria-label="List View"
+          :aria-pressed="layoutMode === 'list'"
         >
           <List class="w-4 h-4" />
         </button>
@@ -107,6 +113,7 @@ const emit = defineEmits<{
           ]"
           title="Details View"
           aria-label="Details View"
+          :aria-pressed="layoutMode === 'details'"
         >
           <LayoutList class="w-4 h-4" />
         </button>
@@ -118,6 +125,7 @@ const emit = defineEmits<{
           ]"
           title="Waterfall Discovery"
           aria-label="Waterfall Discovery"
+          :aria-pressed="layoutMode === 'waterfall'"
         >
           <Tent class="w-4 h-4" />
         </button>
@@ -127,7 +135,7 @@ const emit = defineEmits<{
       <button 
         @click="emit('cycleLayout')"
         class="sm:hidden p-2 bg-slate-100 dark:bg-dracula-800 rounded-lg text-slate-500 dark:text-dracula-400 border border-slate-200/50 dark:border-dracula-700/50 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
-        aria-label="Cycle layout"
+        aria-label="Cycle layout mode"
       >
         <LayoutGrid v-if="layoutMode === 'grid'" class="w-4 h-4" />
         <List v-else-if="layoutMode === 'list'" class="w-4 h-4" />
@@ -140,6 +148,7 @@ const emit = defineEmits<{
         @click="emit('toggleDarkMode')"
         class="p-2 sm:p-2.5 bg-slate-100 dark:bg-dracula-800 hover:bg-slate-200 dark:hover:bg-dracula-700 rounded-lg sm:rounded-xl text-slate-500 dark:text-dracula-400 transition-colors border border-slate-200/50 dark:border-dracula-700/50 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
         aria-label="Toggle dark mode"
+        :aria-pressed="isDarkMode"
       >
         <Sun v-if="isDarkMode" class="w-4 h-4" />
         <Moon v-else class="w-4 h-4" />
