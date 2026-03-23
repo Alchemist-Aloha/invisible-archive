@@ -18,7 +18,6 @@ vendor/
 
 # Node / Frontend
 frontend/node_modules/
-frontend/dist/
 frontend/.vite/
 frontend/*.log
 npm-debug.log*
@@ -55,3 +54,4 @@ test_library/test_video.mp4
 test_library/test_m4v.m4v
 test_library/test_mp4.mp4
 .worktrees/
+test_library/
