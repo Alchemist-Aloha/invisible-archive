@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ChevronRight, Home, ArrowDownAZ, ArrowUpAZ, ArrowDown01, ArrowUp01, Shuffle, SortAsc, SortDesc } from 'lucide-vue-next';
+import { ChevronRight, Home, SortAsc, SortDesc } from 'lucide-vue-next';
 
 const props = defineProps<{
   path: string;
@@ -30,10 +30,10 @@ const segments = computed(() => {
 });
 
 const sortModes = [
-  { id: 'name', label: 'Name', icon: ArrowDownAZ },
-  { id: 'natural', label: 'Natural', icon: ArrowDown01 },
-  { id: 'size', label: 'Size', icon: ArrowDown01 }, // Using same icon for simplicity
-  { id: 'random', label: 'Shuffle', icon: Shuffle },
+  { id: 'name', label: 'Name' },
+  { id: 'natural', label: 'Natural' },
+  { id: 'size', label: 'Size' },
+  { id: 'random', label: 'Shuffle' },
 ];
 </script>
 
