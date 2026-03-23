@@ -8,16 +8,30 @@ class ExplorerProvider with ChangeNotifier {
   bool _isLoading = false;
   String? _error;
   final List<String> _history = [];
+  String _sortMode = 'name';
+  bool _isDescending = false;
 
   String get currentPath => _currentPath;
   List<FileItem> get items => _items;
   bool get isLoading => _isLoading;
   String? get error => _error;
   bool get canGoBack => _history.isNotEmpty || _currentPath != '/';
+  String get sortMode => _sortMode;
+  bool get isDescending => _isDescending;
 
   final ApiService api;
 
   ExplorerProvider(this.api) {
+    fetchList(_currentPath);
+  }
+
+  void setSortMode(String mode) {
+    _sortMode = mode;
+    fetchList(_currentPath);
+  }
+
+  void toggleSortOrder() {
+    _isDescending = !_isDescending;
     fetchList(_currentPath);
   }
 
@@ -27,7 +41,11 @@ class ExplorerProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final response = await api.fetchList(path);
+      final response = await api.fetchList(
+        path, 
+        sort: _sortMode, 
+        order: _isDescending ? 'desc' : 'asc',
+      );
       
       if (pushToHistory && _currentPath != response.effectivePath) {
         _history.add(_currentPath);

@@ -43,9 +43,16 @@ func (h *Handler) List(w http.ResponseWriter, r *http.Request) {
 	if requestPath == "" || requestPath == "." {
 		requestPath = "/"
 	}
-	log.Printf("API: Listing path: %s", requestPath)
+	sortMode := r.URL.Query().Get("sort")
+	order := r.URL.Query().Get("order")
+	desc := order == "desc"
+	if sortMode == "size" && order == "" {
+		desc = true
+	}
 
-	files, effectivePath, err := h.vfs.ReadDir(requestPath)
+	log.Printf("API: Listing path: %s (sort: %s, desc: %v)", requestPath, sortMode, desc)
+
+	files, effectivePath, err := h.vfs.ReadDir(requestPath, sortMode, desc)
 	if err != nil {
 		log.Printf("API: Error listing path %s: %v", requestPath, err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

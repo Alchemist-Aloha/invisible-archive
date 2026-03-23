@@ -97,6 +97,29 @@ class _ExplorerPageState extends State<ExplorerPage> {
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
+                    PopupMenuButton<String>(
+                      initialValue: explorer.sortMode,
+                      onSelected: explorer.setSortMode,
+                      icon: const Icon(Icons.sort, size: 20),
+                      tooltip: 'Sort Mode',
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(value: 'name', child: Text('Name')),
+                        const PopupMenuItem(value: 'natural', child: Text('Natural')),
+                        const PopupMenuItem(value: 'size', child: Text('Size')),
+                        const PopupMenuItem(value: 'random', child: Text('Shuffle')),
+                      ],
+                    ),
+                    if (explorer.sortMode != 'random')
+                      IconButton(
+                        icon: Icon(
+                          explorer.isDescending ? Icons.arrow_downward : Icons.arrow_upward,
+                          size: 18,
+                        ),
+                        onPressed: explorer.toggleSortOrder,
+                        tooltip: 'Toggle Order',
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    const SizedBox(width: 8),
                     SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(value: 'grid', icon: Icon(Icons.grid_view), tooltip: 'Grid'),

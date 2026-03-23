@@ -32,7 +32,7 @@ func TestManager(t *testing.T) {
 	}
 
 	t.Run("List ZIP as directory (Auto-enter single folder)", func(t *testing.T) {
-		files, effectivePath, err := mgr.ReadDir("archive.zip")
+		files, effectivePath, err := mgr.ReadDir("archive.zip", "", false)
 		if err != nil {
 			t.Errorf("ReadDir(archive.zip) error: %v", err)
 		} else {
@@ -53,7 +53,7 @@ func TestManager(t *testing.T) {
 	})
 
 	t.Run("List inner directory inside ZIP", func(t *testing.T) {
-		files, _, err := mgr.ReadDir("archive.zip/inner")
+		files, _, err := mgr.ReadDir("archive.zip/inner", "", false)
 		if err != nil {
 			t.Fatal(err)
 		}

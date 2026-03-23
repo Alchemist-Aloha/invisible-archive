@@ -6,8 +6,10 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -105,48 +107,106 @@ func (m *Manager) Stat(path string) (os.FileInfo, error) {
 }
 
 // ReadDir returns a list of directory entries and the effective path (might be deeper for ZIPs)
-func (m *Manager) ReadDir(path string) ([]os.FileInfo, string, error) {
+func (m *Manager) ReadDir(path string, sortMode string, desc bool) ([]os.FileInfo, string, error) {
 	res, err := PeelPath(m.basePath, path)
 	if err != nil {
 		return nil, "", err
 	}
+
+	var items []os.FileInfo
+	var effectivePath string
 
 	if !res.IsArchive {
 		relPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
 		if m.indexer != nil {
 			go m.indexer.IndexDirectory(context.Background(), res.PhysicalPath)
 		}
-		items, err := afero.ReadDir(m.osFs, relPath)
-		return items, path, err
+		items, err = afero.ReadDir(m.osFs, relPath)
+		effectivePath = path
+	} else {
+		ca, err := m.mountTable.Get(res.PhysicalPath)
+		if err != nil {
+			return nil, "", err
+		}
+		defer ca.Close()
+
+		if m.indexer != nil {
+			relZipPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
+			go m.indexer.IndexZip(context.Background(), res.PhysicalPath, relZipPath)
+		}
+
+		// Auto-enter logic
+		effectiveVPath := res.VirtualPath
+		for {
+			tmpItems, _ := m.readZipDir(ca.Reader, effectiveVPath)
+			if len(tmpItems) == 1 && tmpItems[0].IsDir() && res.VirtualPath == "" {
+				// Only auto-enter if we are at the root of the ZIP and there is exactly one folder
+				effectiveVPath = filepath.ToSlash(filepath.Join(effectiveVPath, tmpItems[0].Name()))
+				continue
+			}
+			break
+		}
+
+		items, err = m.readZipDir(ca.Reader, effectiveVPath)
+		relZipPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
+		effectivePath = "/" + filepath.ToSlash(filepath.Join(relZipPath, effectiveVPath))
 	}
 
-	ca, err := m.mountTable.Get(res.PhysicalPath)
 	if err != nil {
 		return nil, "", err
 	}
-	defer ca.Close()
 
-	if m.indexer != nil {
-		relZipPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
-		go m.indexer.IndexZip(context.Background(), res.PhysicalPath, relZipPath)
+	// Apply sorting
+	isBrowsable := func(fi os.FileInfo) bool {
+		return fi.IsDir() || strings.HasSuffix(strings.ToLower(fi.Name()), ".zip")
 	}
 
-	// Auto-enter logic
-	effectiveVPath := res.VirtualPath
-	for {
-		items, _ := m.readZipDir(ca.Reader, effectiveVPath)
-		if len(items) == 1 && items[0].IsDir() && res.VirtualPath == "" {
-			// Only auto-enter if we are at the root of the ZIP and there is exactly one folder
-			effectiveVPath = filepath.ToSlash(filepath.Join(effectiveVPath, items[0].Name()))
-			continue
+	if sortMode == "random" {
+		// Group browsing items first, then others, each group shuffled
+		var browsable []os.FileInfo
+		var others []os.FileInfo
+		for _, item := range items {
+			if isBrowsable(item) {
+				browsable = append(browsable, item)
+			} else {
+				others = append(others, item)
+			}
 		}
-		break
+		rand.Shuffle(len(browsable), func(i, j int) {
+			browsable[i], browsable[j] = browsable[j], browsable[i]
+		})
+		rand.Shuffle(len(others), func(i, j int) {
+			others[i], others[j] = others[j], others[i]
+		})
+		return append(browsable, others...), effectivePath, nil
 	}
 
-	finalItems, err := m.readZipDir(ca.Reader, effectiveVPath)
-	relZipPath, _ := filepath.Rel(m.basePath, res.PhysicalPath)
-	effectivePath := "/" + filepath.ToSlash(filepath.Join(relZipPath, effectiveVPath))
-	return finalItems, effectivePath, err
+	sort.Slice(items, func(i, j int) bool {
+		bi := isBrowsable(items[i])
+		bj := isBrowsable(items[j])
+		if bi != bj {
+			return bi
+		}
+
+		var res bool
+		switch sortMode {
+		case "size":
+			res = items[i].Size() < items[j].Size()
+		case "natural":
+			res = NaturalCompare(strings.ToLower(items[i].Name()), strings.ToLower(items[j].Name()))
+		case "name":
+			fallthrough
+		default:
+			res = strings.ToLower(items[i].Name()) < strings.ToLower(items[j].Name())
+		}
+
+		if desc {
+			return !res
+		}
+		return res
+	})
+
+	return items, effectivePath, nil
 }
 
 // parseZipEntryName extracts the first path component and whether it should be

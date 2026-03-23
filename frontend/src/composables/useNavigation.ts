@@ -11,6 +11,18 @@ export function useNavigation() {
   };
 
   const currentPath = ref(getInitialPath());
+  const sortMode = ref(localStorage.getItem('sortMode') || 'name');
+  const isDescending = ref(localStorage.getItem('isDescending') === 'true');
+
+  const setSortMode = (mode: string) => {
+    sortMode.value = mode;
+    localStorage.setItem('sortMode', mode);
+  };
+
+  const toggleSortOrder = () => {
+    isDescending.value = !isDescending.value;
+    localStorage.setItem('isDescending', isDescending.value.toString());
+  };
 
   const handleNavigate = (path: string, pushState = true) => {
     currentPath.value = path;
@@ -49,6 +61,10 @@ export function useNavigation() {
 
   return {
     currentPath,
+    sortMode,
+    isDescending,
+    setSortMode,
+    toggleSortOrder,
     handleNavigate,
     goBack,
     initHistoryStack,

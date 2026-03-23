@@ -21,8 +21,12 @@ class ApiService {
 
   String get apiBase => '$baseUrl/api';
 
-  Future<ListResponse> fetchList(String path) async {
-    final response = await http.get(Uri.parse('$apiBase/ls?path=${Uri.encodeComponent(path)}'));
+  Future<ListResponse> fetchList(String path, {String? sort, String? order}) async {
+    var url = '$apiBase/ls?path=${Uri.encodeComponent(path)}';
+    if (sort != null) url += '&sort=$sort';
+    if (order != null) url += '&order=$order';
+    
+    final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       return ListResponse.fromJson(jsonDecode(response.body));
     } else {

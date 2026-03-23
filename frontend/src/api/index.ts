@@ -5,8 +5,11 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || '/api',
 });
 
-export const fetchList = async (path: string): Promise<ListResponse> => {
-  const { data } = await api.get<ListResponse>('/ls', { params: { path } });
+export const fetchList = async (path: string, sort?: string, order?: string): Promise<ListResponse> => {
+  const params: any = { path };
+  if (sort) params.sort = sort;
+  if (order) params.order = order;
+  const { data } = await api.get<ListResponse>('/ls', { params });
   return data;
 };
 

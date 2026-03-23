@@ -17,15 +17,15 @@ import 'photoswipe/style.css';
 // Logic orchestration
 const { isDarkMode, toggleDarkMode, updateTheme } = useTheme();
 const { layoutMode, setLayoutMode, cycleLayout } = useLayout();
-const { currentPath, handleNavigate, goBack, initHistoryStack } = useNavigation();
+const { currentPath, sortMode, isDescending, setSortMode, toggleSortOrder, handleNavigate, goBack, initHistoryStack } = useNavigation();
 
 const searchQuery = ref('');
 const isSearching = ref(false);
 
 const { data: listData, isLoading, error, refetch } = useQuery({
-  queryKey: ['files', currentPath],
+  queryKey: ['files', currentPath, sortMode, isDescending],
   queryFn: async () => {
-    const res = await fetchList(currentPath.value);
+    const res = await fetchList(currentPath.value, sortMode.value, isDescending.value ? 'desc' : 'asc');
     if (res.effective_path !== currentPath.value && !isSearching.value) {
       handleNavigate(res.effective_path, false);
     }
@@ -122,7 +122,7 @@ watch(currentPath, () => {
     />
 
     <!-- Contextual Actions Bar -->
-    <div class="flex items-center px-4 sm:px-8 py-2 bg-white dark:bg-dracula-800/50 border-b border-slate-200/60 dark:border-dracula-600/60 z-20 transition-colors">
+    <div class="flex items-center px-4 sm:px-8 py-0 bg-transparent z-20 transition-colors">
       <button 
         v-if="currentPath !== '/'"
         @click="goBack"
@@ -134,7 +134,16 @@ watch(currentPath, () => {
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
         </svg>
       </button>
-      <Breadcrumbs :path="currentPath" @navigate="handleNavigate" class="flex-1 border-none bg-transparent shadow-none px-0 dark:text-dracula-200" />
+      <Breadcrumbs 
+        :path="currentPath" 
+        :sortMode="sortMode"
+        :isDescending="isDescending"
+        :layoutMode="layoutMode"
+        @navigate="handleNavigate" 
+        @update:sortMode="setSortMode"
+        @toggleSortOrder="toggleSortOrder"
+        class="flex-1 border-none bg-transparent shadow-none px-0 dark:text-dracula-200" 
+      />
     </div>
 
     <!-- Main Content Area -->
