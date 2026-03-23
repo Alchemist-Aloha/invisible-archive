@@ -220,8 +220,23 @@ func (idx *Indexer) IndexZip(ctx context.Context, physicalPath, relZipPath strin
 			parentInZip = ""
 		}
 
-		parentPath := "/" + filepath.Join(relZipPath, parentInZip)
-		fullPath := "/" + filepath.Join(relZipPath, f.Name)
+		// PERFORMANCE: Avoid filepath.Join in this tight loop to prevent implicit filepath.Clean allocations.
+		var parentPath, fullPath string
+		if relZipPath == "" {
+			if parentInZip == "" {
+				parentPath = "/"
+			} else {
+				parentPath = "/" + parentInZip
+			}
+			fullPath = "/" + cleanName
+		} else {
+			if parentInZip == "" {
+				parentPath = "/" + relZipPath
+			} else {
+				parentPath = "/" + relZipPath + "/" + parentInZip
+			}
+			fullPath = "/" + relZipPath + "/" + cleanName
+		}
 		isDir := f.FileInfo().IsDir()
 
 		caps := uint32(util.GetCapabilities(name, isDir))
