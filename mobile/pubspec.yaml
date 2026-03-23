@@ -1,6 +1,6 @@
 name: invisible_archive_mobile
 description: A new Flutter project for Invisible Archive.
-version: 1.0.0+1
+version: 1.3.0+1
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

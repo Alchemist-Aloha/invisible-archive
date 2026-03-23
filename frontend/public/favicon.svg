@@ -1,24 +1,28 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <defs>
-    <linearGradient id="folderGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#2563eb;stop-opacity:1" />
-    </linearGradient>
-  </defs>
+  <!-- Background Stacked Archives (to show 'more' files) -->
+  <rect x="96" y="32" width="352" height="384" rx="64" fill="#2563eb" fill-opacity="0.4" />
+  <rect x="80" y="48" width="368" height="384" rx="64" fill="#2563eb" fill-opacity="0.6" />
   
-  <!-- Folder Shadow -->
-  <path d="M64 128 C 64 100, 80 96, 100 96 H 200 L 240 128 H 412 C 440 128, 448 144, 448 164 V 400 C 448 428, 432 432, 412 432 H 100 C 72 432, 64 416, 64 400 Z" fill="rgba(0,0,0,0.1)" transform="translate(4,4)" />
+  <!-- Primary Archive Box -->
+  <rect x="64" y="64" width="384" height="384" rx="64" fill="#3b82f6" />
   
-  <!-- Folder Back -->
-  <path d="M64 128 C 64 100, 80 96, 100 96 H 200 L 240 128 H 412 C 440 128, 448 144, 448 164 V 400 C 448 428, 432 432, 412 432 H 100 C 72 432, 64 416, 64 400 Z" fill="url(#folderGrad)" />
+  <!-- Zipper Track (Visual shorthand for 'zipped') -->
+  <g fill="white" fill-opacity="0.15">
+    <rect x="84" y="120" width="24" height="12" rx="2" />
+    <rect x="84" y="144" width="24" height="12" rx="2" />
+    <rect x="84" y="168" width="24" height="12" rx="2" />
+    <rect x="84" y="192" width="24" height="12" rx="2" />
+    <rect x="84" y="216" width="24" height="12" rx="2" />
+    <rect x="84" y="240" width="24" height="12" rx="2" />
+    <rect x="84" y="264" width="24" height="12" rx="2" />
+    <rect x="84" y="288" width="24" height="12" rx="2" />
+    <rect x="84" y="312" width="24" height="12" rx="2" />
+    <rect x="84" y="336" width="24" height="12" rx="2" />
+  </g>
   
-  <!-- Archive Box (Stylized zipper/layer indicator) -->
-  <rect x="160" y="180" width="192" height="160" rx="8" fill="#ffffff" fill-opacity="0.2" stroke="#ffffff" stroke-width="2" stroke-dasharray="6,4" />
-  <rect x="196" y="210" width="120" height="12" rx="4" fill="#ffffff" />
-  <rect x="196" y="245" width="120" height="12" rx="4" fill="#ffffff" />
-  <rect x="196" y="280" width="120" height="12" rx="4" fill="#ffffff" />
+  <!-- Negative Space 'I' (Center Cutout) -->
+  <path d="M192 160 H320 V192 H272 V320 H320 V352 H192 V320 H240 V192 H192 V160 Z" fill="white" />
   
-  <!-- Folder Front (Translucent Glass Effect) -->
-  <path d="M64 200 C 64 172, 80 168, 100 168 H 412 C 440 168, 448 184, 448 204 V 400 C 448 428, 432 432, 412 432 H 100 C 72 432, 64 416, 64 400 Z" fill="#ffffff" fill-opacity="0.3" />
-  <path d="M64 200 C 64 172, 80 168, 100 168 H 412 C 440 168, 448 184, 448 204 V 400 C 448 428, 432 432, 412 432 H 100 C 72 432, 64 416, 64 400 Z" fill="none" stroke="#ffffff" stroke-width="2" stroke-opacity="0.5" />
+  <!-- Drawer Handle / Layer Indicator -->
+  <rect x="224" y="376" width="64" height="12" rx="6" fill="white" fill-opacity="0.3" />
 </svg>
