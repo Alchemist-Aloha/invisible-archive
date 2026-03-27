@@ -148,12 +148,13 @@ class _WaterfallPageState extends State<WaterfallPage> {
     }
 
     if (_error != null) {
+      final cs = Theme.of(context).colorScheme;
       return Center(
         child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              Icon(Icons.error_outline, color: cs.error, size: 48),
               const SizedBox(height: 16),
               Text('Error: $_error'),
               const SizedBox(height: 16),

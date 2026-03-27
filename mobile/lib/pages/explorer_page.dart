@@ -156,13 +156,14 @@ class _ExplorerPageState extends State<ExplorerPage> {
     }
 
     if (explorer.error != null && explorer.items.isEmpty) {
+      final cs = Theme.of(context).colorScheme;
       return Center(
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, color: Colors.red, size: 48),
+              Icon(Icons.error_outline, color: cs.error, size: 48),
               const SizedBox(height: 16),
               Text('Error: ${explorer.error}'),
               const SizedBox(height: 16),

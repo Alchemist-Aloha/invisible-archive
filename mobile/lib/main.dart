@@ -4,6 +4,7 @@ import 'providers/settings_provider.dart';
 import 'providers/explorer_provider.dart';
 import 'pages/explorer_page.dart';
 import 'api.dart';
+import 'theme.dart';
 
 void main() {
   runApp(
@@ -30,25 +31,14 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider(
       key: ValueKey(settings.serverUrl),
       create: (_) => ExplorerProvider(api),
-      child: MaterialApp(
-        title: 'Invisible Archive',
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: settings.isDarkMode ? Brightness.dark : Brightness.light,
-          ),
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-          ),
-          cardTheme: CardThemeData(
-            clipBehavior: Clip.antiAlias,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          ),
-        ),
-        home: const ExplorerPage(),
-        debugShowCheckedModeBanner: false,
-      ),
+      child: Builder(builder: (context) {
+        return MaterialApp(
+          title: 'Invisible Archive',
+          theme: buildAppTheme(darkMode: settings.isDarkMode, seed: Color(settings.seedColor)),
+          home: const ExplorerPage(),
+          debugShowCheckedModeBanner: false,
+        );
+      }),
     );
   }
 }

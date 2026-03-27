@@ -117,12 +117,12 @@ class _PreviewPageState extends State<PreviewPage> {
               aspectRatio: _videoController!.value.aspectRatio,
               showControls: true,
               materialProgressColors: ChewieProgressColors(
-                playedColor: Colors.blue,
-                handleColor: Colors.blue,
-                backgroundColor: Colors.white24,
-                bufferedColor: Colors.white54,
+                playedColor: Theme.of(context).colorScheme.primary,
+                handleColor: Theme.of(context).colorScheme.primary,
+                backgroundColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.12),
+                bufferedColor: Theme.of(context).colorScheme.onSurface.withOpacity(0.38),
               ),
-              placeholder: Container(color: Colors.black),
+              placeholder: Container(color: Theme.of(context).colorScheme.background),
               autoInitialize: true,
             );
           });
@@ -155,14 +155,15 @@ class _PreviewPageState extends State<PreviewPage> {
     final bool isImage = _currentItem.canRender && !_currentItem.name.toLowerCase().endsWith('.pdf');
     final bool hasGallery = widget.allImages != null && widget.allImages!.isNotEmpty && isImage;
 
+    final cs = Theme.of(context).colorScheme;
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: cs.background,
       appBar: AppBar(
         title: Text(_currentItem.name),
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: Colors.white,
+        foregroundColor: cs.onBackground,
         centerTitle: true,
         actions: [
           IconButton(
@@ -233,7 +234,7 @@ class _PreviewPageState extends State<PreviewPage> {
               },
               itemCount: widget.allImages!.length,
               loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
-              backgroundDecoration: const BoxDecoration(color: Colors.black),
+              backgroundDecoration: BoxDecoration(color: Theme.of(context).colorScheme.background),
               pageController: _pageController,
               onPageChanged: (index) {
                 setState(() {
@@ -263,13 +264,13 @@ class _PreviewPageState extends State<PreviewPage> {
   }
 
   Widget _buildImagePreview() {
-    return PhotoView(
-      imageProvider: CachedNetworkImageProvider(widget.api.getRawUrl(_currentItem.path)),
-      loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
-      errorBuilder: (context, error, stackTrace) => const Center(
-        child: Text('Failed to load image', style: TextStyle(color: Colors.white)),
-      ),
-    );
+      return PhotoView(
+        imageProvider: CachedNetworkImageProvider(widget.api.getRawUrl(_currentItem.path)),
+        loadingBuilder: (context, event) => const Center(child: CircularProgressIndicator()),
+        errorBuilder: (context, error, stackTrace) => Center(
+          child: Text('Failed to load image', style: TextStyle(color: Theme.of(context).colorScheme.onSurface)),
+        ),
+      );
   }
 
   Widget _buildVideoPreview() {

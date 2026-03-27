@@ -37,6 +37,55 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+  List<Widget> _buildColorSwatches(BuildContext context) {
+    final settings = context.watch<SettingsProvider>();
+    final current = Color(settings.seedColor);
+    final colors = <Color>[
+      const Color(0xFF0066CC),
+      const Color(0xFF0A9396),
+      const Color(0xFF007F5F),
+      const Color(0xFF9C4221),
+      const Color(0xFF8B5CF6),
+      const Color(0xFFEF4444),
+      const Color(0xFFFFA500),
+      const Color(0xFF0EA5E9),
+      const Color(0xFF22C55E),
+      const Color(0xFFEC4899),
+    ];
+
+    return colors.map((c) {
+      final selected = c.value == current.value;
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 6.0),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(28),
+          onTap: () => context.read<SettingsProvider>().setSeedColor(c.value),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: c,
+              border: selected
+                  ? Border.all(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      width: 3,
+                    )
+                  : null,
+            ),
+            child: selected
+                ? Icon(
+                    Icons.check,
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    size: 20,
+                  )
+                : null,
+          ),
+        ),
+      );
+    }).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,6 +155,28 @@ class _SettingsPageState extends State<SettingsPage> {
               ),
               value: context.watch<SettingsProvider>().isDarkMode,
               onChanged: (val) => context.read<SettingsProvider>().setDarkMode(val),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Accent Color',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: Theme.of(context).colorScheme.primary,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            height: 56,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  const SizedBox(width: 8),
+                  ..._buildColorSwatches(context),
+                  const SizedBox(width: 8),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 32),

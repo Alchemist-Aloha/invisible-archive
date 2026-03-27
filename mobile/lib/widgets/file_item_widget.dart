@@ -28,9 +28,10 @@ class FileItemWidget extends StatelessWidget {
   }
 
   Widget _buildGridItem(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Card(
       elevation: 0,
-      color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+      color: cs.surfaceVariant,
       child: InkWell(
         onTap: onTap,
         child: Column(
@@ -56,12 +57,13 @@ class FileItemWidget extends StatelessWidget {
   }
 
   Widget _buildListItem(BuildContext context, bool showDetails) {
+    final cs = Theme.of(context).colorScheme;
     return ListTile(
       leading: Container(
         width: 48,
         height: 48,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+          color: cs.surfaceVariant,
           borderRadius: BorderRadius.circular(8),
         ),
         clipBehavior: Clip.antiAlias,
@@ -107,28 +109,27 @@ class FileItemWidget extends StatelessWidget {
 
   Widget _buildDefaultIcon(BuildContext context) {
     IconData iconData;
-    Color color;
+    final cs = Theme.of(context).colorScheme;
 
     if (item.isDir) {
       iconData = Icons.folder;
-      color = Theme.of(context).colorScheme.primary;
+      // primary for folders
+      return Icon(iconData, color: cs.primary, size: layout == 'grid' ? 40 : 24);
     } else if (item.name.toLowerCase().endsWith('.zip')) {
       iconData = Icons.archive;
-      color = Colors.orange;
+      return Icon(iconData, color: cs.secondary, size: layout == 'grid' ? 40 : 24);
     } else if (item.canStream) {
       iconData = Icons.movie;
-      color = Colors.purple;
+      return Icon(iconData, color: cs.tertiary, size: layout == 'grid' ? 40 : 24);
     } else if (item.canRender) {
       iconData = item.name.toLowerCase().endsWith('.pdf') ? Icons.picture_as_pdf : Icons.image;
-      color = Theme.of(context).colorScheme.secondary;
+      return Icon(iconData, color: cs.secondary, size: layout == 'grid' ? 40 : 24);
     } else if (item.canEdit) {
       iconData = Icons.description;
-      color = Colors.green;
+      return Icon(iconData, color: cs.primaryContainer, size: layout == 'grid' ? 40 : 24);
     } else {
       iconData = Icons.insert_drive_file;
-      color = Theme.of(context).colorScheme.outline;
+      return Icon(iconData, color: cs.outline, size: layout == 'grid' ? 40 : 24);
     }
-
-    return Icon(iconData, color: color, size: layout == 'grid' ? 40 : 24);
   }
 }

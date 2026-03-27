@@ -51,13 +51,14 @@ class _WaterfallItemWidgetState extends State<WaterfallItemWidget> {
   Widget build(BuildContext context) {
     final thumbUrl = widget.api.getThumbUrl(widget.item.path);
     final rawUrl = widget.api.getRawUrl(widget.item.path);
-
+    final cs = Theme.of(context).colorScheme;
+    final sh = Theme.of(context).shadowColor;
     return Card(
       margin: EdgeInsets.zero,
       elevation: 4,
-      shadowColor: Colors.black.withOpacity(0.1),
+      shadowColor: Theme.of(context).shadowColor.withOpacity(0.08),
       clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
         onTap: widget.onTap,
         child: Stack(
@@ -68,18 +69,18 @@ class _WaterfallItemWidgetState extends State<WaterfallItemWidget> {
               placeholder: (context, url) => AspectRatio(
                 aspectRatio: 1,
                 child: Container(
-                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: cs.surfaceVariant,
                   child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                 ),
               ),
-              errorWidget: (context, url, error) => const AspectRatio(
+              errorWidget: (context, url, error) => AspectRatio(
                 aspectRatio: 1,
-                child: Center(child: Icon(Icons.broken_image_outlined)),
+                child: Center(child: Icon(Icons.broken_image_outlined, color: cs.onSurface)),
               ),
               fit: BoxFit.cover,
               width: double.infinity,
             ),
-            
+
             // Tier 2: Original (Loaded and overlaid when widget is stable)
             if (_showRaw)
               CachedNetworkImage(
@@ -90,7 +91,7 @@ class _WaterfallItemWidgetState extends State<WaterfallItemWidget> {
                 width: double.infinity,
                 fadeInDuration: const Duration(milliseconds: 500),
               ),
-              
+
             // Subtle gradient overlay for text readability
             Positioned.fill(
               child: DecoratedBox(
@@ -100,15 +101,15 @@ class _WaterfallItemWidgetState extends State<WaterfallItemWidget> {
                     end: Alignment.bottomCenter,
                     colors: [
                       Colors.transparent,
-                      Colors.black.withOpacity(0.05),
-                      Colors.black.withOpacity(0.4),
+                      cs.onSurface.withOpacity(0.04),
+                      cs.onSurface.withOpacity(0.32),
                     ],
                     stops: const [0.6, 0.8, 1.0],
                   ),
                 ),
               ),
             ),
-            
+
             // Item Info
             Positioned(
               bottom: 8,
@@ -120,12 +121,11 @@ class _WaterfallItemWidgetState extends State<WaterfallItemWidget> {
                 children: [
                   Text(
                     widget.item.name,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      shadows: [Shadow(blurRadius: 2, color: Colors.black)],
-                    ),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w700,
+                          shadows: [Shadow(blurRadius: 2, color: sh.withOpacity(0.6))],
+                        ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),

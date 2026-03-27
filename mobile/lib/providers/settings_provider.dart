@@ -4,10 +4,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SettingsProvider with ChangeNotifier {
   String _serverUrl = 'http://10.0.2.2:8080'; // Default for Android Emulator
   bool _isDarkMode = false;
+  int _seedColor = 0xFF0066CC;
   String _layoutMode = 'grid';
 
   String get serverUrl => _serverUrl;
   bool get isDarkMode => _isDarkMode;
+  int get seedColor => _seedColor;
   String get layoutMode => _layoutMode;
 
   SettingsProvider() {
@@ -18,6 +20,7 @@ class SettingsProvider with ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     _serverUrl = prefs.getString('serverUrl') ?? _serverUrl;
     _isDarkMode = prefs.getBool('isDarkMode') ?? _isDarkMode;
+    _seedColor = prefs.getInt('seedColor') ?? _seedColor;
     _layoutMode = prefs.getString('layoutMode') ?? _layoutMode;
     notifyListeners();
   }
@@ -33,6 +36,13 @@ class SettingsProvider with ChangeNotifier {
     _isDarkMode = value;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('isDarkMode', value);
+    notifyListeners();
+  }
+
+  Future<void> setSeedColor(int colorValue) async {
+    _seedColor = colorValue;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('seedColor', colorValue);
     notifyListeners();
   }
 
