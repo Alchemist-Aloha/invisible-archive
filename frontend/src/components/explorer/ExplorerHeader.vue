@@ -76,9 +76,10 @@ const emit = defineEmits<{
     
     <div class="flex items-center gap-1 sm:gap-2 shrink-0">
       <!-- Layout Toggle (Desktop: Full, Mobile: Cycle) -->
-      <div class="hidden sm:flex items-center bg-slate-100 dark:bg-dracula-800 p-1 rounded-xl border border-slate-200/50 dark:border-dracula-700/50">
+      <div role="group" aria-label="Layout modes" class="hidden sm:flex items-center bg-slate-100 dark:bg-dracula-800 p-1 rounded-xl border border-slate-200/50 dark:border-dracula-700/50">
         <button 
           @click="emit('setLayoutMode', 'grid')"
+          :aria-pressed="layoutMode === 'grid'"
           :class="[
             'p-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none',
             layoutMode === 'grid' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
@@ -90,6 +91,7 @@ const emit = defineEmits<{
         </button>
         <button 
           @click="emit('setLayoutMode', 'list')"
+          :aria-pressed="layoutMode === 'list'"
           :class="[
             'p-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none',
             layoutMode === 'list' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
@@ -101,6 +103,7 @@ const emit = defineEmits<{
         </button>
         <button 
           @click="emit('setLayoutMode', 'details')"
+          :aria-pressed="layoutMode === 'details'"
           :class="[
             'p-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none',
             layoutMode === 'details' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
@@ -112,6 +115,7 @@ const emit = defineEmits<{
         </button>
         <button 
           @click="emit('setLayoutMode', 'waterfall')"
+          :aria-pressed="layoutMode === 'waterfall'"
           :class="[
             'p-1.5 rounded-lg transition-all focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none',
             layoutMode === 'waterfall' ? 'bg-white dark:bg-dracula-700 shadow-sm text-blue-600 dark:text-blue-400' : 'text-slate-400 hover:text-slate-600 dark:hover:text-dracula-200'
@@ -138,6 +142,7 @@ const emit = defineEmits<{
       <!-- Theme Toggle -->
       <button 
         @click="emit('toggleDarkMode')"
+        :aria-pressed="isDarkMode"
         class="p-2 sm:p-2.5 bg-slate-100 dark:bg-dracula-800 hover:bg-slate-200 dark:hover:bg-dracula-700 rounded-lg sm:rounded-xl text-slate-500 dark:text-dracula-400 transition-colors border border-slate-200/50 dark:border-dracula-700/50 focus-visible:ring-2 focus-visible:ring-blue-500/50 outline-none"
         aria-label="Toggle dark mode"
       >
