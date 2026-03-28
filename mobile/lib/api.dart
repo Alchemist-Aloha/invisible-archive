@@ -56,7 +56,8 @@ class ApiService {
 
   String getRawUrl(String path, {bool download = false}) {
     final cleanPath = path.startsWith('/') ? path.substring(1) : path;
-    final encodedPath = cleanPath.split('/').map(Uri.encodeComponent).join('/');
+    // ⚡ Bolt: Zero-allocation path encoding
+    final encodedPath = Uri.encodeComponent(cleanPath).replaceAll('%2F', '/');
     var url = '$apiBase/raw/$encodedPath';
     if (download) {
       url += '?download=1';
