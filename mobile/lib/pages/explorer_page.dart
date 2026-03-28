@@ -52,7 +52,7 @@ class _ExplorerPageState extends State<ExplorerPage> {
                       title: Text(item.name),
                       onTap: () {
                         controller.closeView(item.name);
-                        explorer.search(item.name);
+                        explorer.performSearch(item.name);
                       },
                     ));
               },

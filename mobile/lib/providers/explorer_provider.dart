@@ -84,7 +84,7 @@ class ExplorerProvider with ChangeNotifier {
     }
   }
 
-  Future<void> search(String query) async {
+  Future<void> performSearch(String query) async {
     if (query.isEmpty) {
       await fetchList(_currentPath);
       return;
