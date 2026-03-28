@@ -3,9 +3,13 @@ package vfs
 import (
 	"archive/zip"
 	"bytes"
+	"context"
+	"database/sql"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/likun/invisible-archive/internal/data"
 )
 
 func TestManager(t *testing.T) {
@@ -145,6 +149,120 @@ func TestManager(t *testing.T) {
 		}
 		if newOffset != 18 {
 			t.Errorf("expected offset 18, got %d", newOffset)
+		}
+	})
+}
+
+func TestManager_Search(t *testing.T) {
+	// 1. Test when indexer is nil
+	t.Run("Nil Indexer", func(t *testing.T) {
+		mgr, err := NewManager(".", 10, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		_, err = mgr.Search(context.Background(), "anything")
+		if err == nil {
+			t.Fatal("expected error when indexer is nil, got none")
+		}
+		if err.Error() != "indexer not initialized" {
+			t.Fatalf("expected error 'indexer not initialized', got '%v'", err)
+		}
+	})
+
+	// 2. Test with actual indexer and sqlite db
+	t.Run("Valid Search", func(t *testing.T) {
+		dbPath := filepath.Join(t.TempDir(), "test_vfs_search.db")
+
+		// Init DB
+		indexer, err := data.NewIndexer(dbPath, ".")
+		if err != nil {
+			t.Fatalf("failed to init indexer: %v", err)
+		}
+		defer indexer.Close()
+
+		// Access db and init schema
+		db, err := sql.Open("sqlite", "file:"+dbPath)
+		if err != nil {
+			t.Fatalf("failed to open db: %v", err)
+		}
+		defer db.Close()
+
+		schemaPath := filepath.Join("..", "data", "schema.sql")
+		schema, err := os.ReadFile(schemaPath)
+		if err != nil {
+			t.Fatalf("failed to read schema: %v", err)
+		}
+
+		if _, err := db.Exec(string(schema)); err != nil {
+			t.Fatalf("failed to init schema: %v", err)
+		}
+
+		mgr, err := NewManager(".", 10, indexer)
+		if err != nil {
+			t.Fatalf("failed to create manager: %v", err)
+		}
+
+		// Insert mock items
+		err = indexer.GetQueries().UpsertItem(context.Background(), data.UpsertItemParams{
+			ParentPath:   "root",
+			Name:         "testfile.txt",
+			Path:         "root/testfile.txt",
+			IsDir:        false,
+			Size:         100,
+			ModTime:      12345,
+			Capabilities: 0,
+			IsInsideZip:  false,
+		})
+		if err != nil {
+			t.Fatalf("failed to insert item 1: %v", err)
+		}
+
+		err = indexer.GetQueries().UpsertItem(context.Background(), data.UpsertItemParams{
+			ParentPath:   "root/sub",
+			Name:         "another.png",
+			Path:         "root/sub/another.png",
+			IsDir:        false,
+			Size:         200,
+			ModTime:      12345,
+			Capabilities: 0,
+			IsInsideZip:  false,
+		})
+		if err != nil {
+			t.Fatalf("failed to insert item 2: %v", err)
+		}
+
+		// Test search by name match
+		res, err := mgr.Search(context.Background(), "%testfile%")
+		if err != nil {
+			t.Fatalf("search failed: %v", err)
+		}
+		if len(res) != 1 {
+			t.Fatalf("expected 1 result, got %d", len(res))
+		}
+		if res[0].Name != "testfile.txt" {
+			t.Errorf("expected result to be 'testfile.txt', got '%s'", res[0].Name)
+		}
+
+		// Test search by path match
+		res, err = mgr.Search(context.Background(), "%sub/another%")
+		if err != nil {
+			t.Fatalf("search failed: %v", err)
+		}
+		if len(res) != 1 {
+			t.Fatalf("expected 1 result, got %d", len(res))
+		}
+		if res[0].Name != "another.png" {
+			t.Errorf("expected result to be 'another.png', got '%s'", res[0].Name)
+		}
+
+		// Test search no match
+		res, err = mgr.Search(context.Background(), "%nonexistent%")
+		if err != nil {
+			t.Fatalf("search failed: %v", err)
+		}
+		if len(res) != 0 {
+			t.Fatalf("expected 0 results, got %d", len(res))
 		}
 	})
 }
