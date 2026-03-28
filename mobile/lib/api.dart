@@ -4,19 +4,24 @@ import 'models.dart';
 
 class ApiService {
   final String baseUrl;
+  final http.Client? client;
 
-  ApiService(String baseUrl) : baseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
+  ApiService(String baseUrl, {this.client}) : baseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
 
   // Static field to hold the instance
   static String? _currentBaseUrl;
   static ApiService? _instance;
 
-  static ApiService getInstance(String baseUrl) {
+  static ApiService getInstance(String baseUrl, {http.Client? client}) {
     if (_instance == null || _currentBaseUrl != baseUrl) {
       _currentBaseUrl = baseUrl;
-      _instance = ApiService(baseUrl);
+      _instance = ApiService(baseUrl, client: client);
     }
     return _instance!;
+  }
+
+  Future<http.Response> _get(Uri url) {
+    return client != null ? client!.get(url) : http.get(url);
   }
 
   String get apiBase => '$baseUrl/api';
@@ -26,7 +31,7 @@ class ApiService {
     if (sort != null) url += '&sort=$sort';
     if (order != null) url += '&order=$order';
     
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(Uri.parse(url));
     if (response.statusCode == 200) {
       return ListResponse.fromJson(jsonDecode(response.body));
     } else {
@@ -35,7 +40,7 @@ class ApiService {
   }
 
   Future<List<FileItem>> search(String q) async {
-    final response = await http.get(Uri.parse('$apiBase/search?q=${Uri.encodeComponent(q)}'));
+    final response = await _get(Uri.parse('$apiBase/search?q=${Uri.encodeComponent(q)}'));
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => FileItem.fromJson(e as Map<String, dynamic>)).toList();
@@ -45,7 +50,7 @@ class ApiService {
   }
 
   Future<List<FileItem>> fetchRandom(String path, {int limit = 50}) async {
-    final response = await http.get(Uri.parse('$apiBase/random?path=${Uri.encodeComponent(path)}&limit=$limit'));
+    final response = await _get(Uri.parse('$apiBase/random?path=${Uri.encodeComponent(path)}&limit=$limit'));
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
       return data.map((e) => FileItem.fromJson(e as Map<String, dynamic>)).toList();
@@ -70,7 +75,7 @@ class ApiService {
 
   Future<String> fetchText(String path) async {
     final url = getRawUrl(path);
-    final response = await http.get(Uri.parse(url));
+    final response = await _get(Uri.parse(url));
     if (response.statusCode == 200) {
       return response.body;
     } else {
